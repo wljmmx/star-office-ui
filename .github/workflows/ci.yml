@@ -1,0 +1,153 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '18'
+
+jobs:
+  # 代码质量检查
+  lint:
+    name: Lint & Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 black mypy
+          pip install -r backend/requirements.txt
+      
+      - name: Run flake8
+        run: |
+          flake8 backend/ --count --select=E9,F63,F7,F82 --show-source --statistics
+      
+      - name: Run black check
+        run: |
+          black --check backend/ || true
+      
+      - name: Run mypy
+        run: |
+          mypy backend/ --ignore-missing-imports || true
+
+  # 单元测试
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-cov pytest-flask
+          pip install -r backend/requirements.txt
+      
+      - name: Run tests with coverage
+        run: |
+          cd backend
+          pytest tests/ -v --cov=. --cov-report=xml --cov-report=term-missing
+      
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./backend/coverage.xml
+          flags: backend
+          name: codecov-flags
+
+  # 性能测试
+  performance:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install dependencies
+        run: |
+          pip install locust pytest-benchmark
+          pip install -r backend/requirements.txt
+      
+      - name: Run performance benchmarks
+        run: |
+          cd backend
+          pytest tests/ -v --benchmark-only || true
+
+  # 构建 Docker 镜像
+  build:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/star-office-ui:latest
+            ${{ secrets.DOCKER_USERNAME }}/star-office-ui:${{ github.sha }}
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/star-office-ui:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/star-office-ui:buildcache,mode=max
+
+  # 部署到生产环境
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          script: |
+            cd /opt/star-office-ui
+            docker pull ${{ secrets.DOCKER_USERNAME }}/star-office-ui:latest
+            docker stop star-office-ui || true
+            docker rm star-office-ui || true
+            docker run -d \
+              --name star-office-ui \
+              -p 5000:5000 \
+              -e DATABASE_PATH=/data/github-collab.db \
+              --restart unless-stopped \
+              ${{ secrets.DOCKER_USERNAME }}/star-office-ui:latest
+            docker system prune -f
