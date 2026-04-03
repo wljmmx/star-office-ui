@@ -3,19 +3,18 @@
 from flask import jsonify
 from datetime import datetime
 from . import state_bp
-from services.database_service import get_db_service
+from database import load_agents_from_db
 
 @state_bp.route('', methods=['GET'])
 def get_current_state():
     """Get current office state."""
     try:
-        db = get_db_service()
-        agents = db.load_all_agents()
+        agents = load_agents_from_db()
         
         # Find main agent or first agent
         main_agent = None
         for agent in agents:
-            if agent.role == "main":
+            if agent.get("isMain"):
                 main_agent = agent
                 break
         
@@ -23,9 +22,9 @@ def get_current_state():
             main_agent = agents[0]
         
         state = {
-            "state": main_agent.state if main_agent else "idle",
-            "detail": main_agent.detail if main_agent else "等待任务中...",
-            "progress": main_agent.task_progress if main_agent else 0,
+            "state": main_agent["state"] if main_agent else "idle",
+            "detail": main_agent["detail"] if main_agent else "等待任务中...",
+            "progress": main_agent.get("task_progress", 0) if main_agent else 0,
             "updated_at": datetime.now().isoformat(),
         }
         

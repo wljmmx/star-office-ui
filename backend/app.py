@@ -19,6 +19,14 @@ from database import (
     state_to_area,
 )
 
+# Import API blueprints
+from api.agents import agents_bp
+from api.tasks import tasks_bp
+from api.state import state_bp
+from api.assets import assets_bp
+from api.config import config_bp
+from api.join_keys import join_keys_bp
+
 # Keep original store_utils for compatibility
 from store_utils import (
     load_asset_positions as _store_load_asset_positions,
@@ -109,6 +117,15 @@ def load_join_keys():
 
 def save_join_keys(data):
     _store_save_join_keys(JOIN_KEYS_FILE, data)
+
+
+# Register blueprints
+app.register_blueprint(agents_bp)
+app.register_blueprint(tasks_bp)
+app.register_blueprint(state_bp)
+app.register_blueprint(assets_bp)
+app.register_blueprint(config_bp)
+app.register_blueprint(join_keys_bp)
 
 
 @app.route("/", methods=["GET"])

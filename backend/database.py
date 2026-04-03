@@ -102,19 +102,18 @@ def load_agents_from_db() -> List[Dict]:
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Query agents with optional task info
+        # Query agents with optional task info - match actual table schema
         cursor.execute("""
             SELECT 
                 a.id,
                 a.name,
-                a.pixel_character,
-                a.avatar_url,
-                a.role,
+                a.type,
                 a.status,
                 a.current_task_id,
-                t.title as task_title,
+                t.id as task_id,
+                t.name as task_title,
                 t.status as task_status,
-                t.progress as task_progress
+                t.priority as task_progress
             FROM agents a
             LEFT JOIN tasks t ON a.current_task_id = t.id
             ORDER BY a.id
@@ -131,20 +130,20 @@ def load_agents_from_db() -> List[Dict]:
             agent = {
                 "agentId": str(row["id"]),
                 "name": row["name"] or "Unknown",
-                "pixel_character": row["pixel_character"],
-                "avatar_url": row["avatar_url"],
-                "role": row["role"] or "dev",
+                "pixel_character": None,
+                "avatar_url": None,
+                "role": row["type"] or "dev",
                 "state": normalize_agent_state(row["status"]),
                 "area": state_to_area(normalize_agent_state(row["status"])),
                 "source": "github-collab",
-                "isMain": row["role"] == "main",
+                "isMain": row["type"] == "manager",
                 "detail": _get_agent_detail(row),
                 "updated_at": datetime.now().isoformat(),
                 "joinKey": None,
                 "authStatus": "approved",
                 "authExpiresAt": None,
                 "lastPushAt": None,
-                "task_id": row["current_task_id"],
+                "task_id": row["task_id"],
                 "task_title": row["task_title"],
                 "task_progress": row["task_progress"],
             }
@@ -191,10 +190,10 @@ def load_tasks_from_db() -> List[Dict]:
         cursor.execute("""
             SELECT 
                 id,
-                title,
+                name as title,
                 status,
-                progress,
-                assigned_to,
+                priority as progress,
+                assigned_agent as assigned_to,
                 created_at,
                 updated_at
             FROM tasks
@@ -210,8 +209,8 @@ def load_tasks_from_db() -> List[Dict]:
                 "id": row["id"],
                 "title": row["title"],
                 "status": row["status"],
-                "progress": row["progress"] or 0,
-                "assigned_to": row["assigned_to"],
+                "progress": row["priority"] or 0,
+                "assigned_to": row["assigned_agent"],
                 "created_at": row["created_at"],
                 "updated_at": row["updated_at"],
             }
@@ -234,14 +233,13 @@ def get_agent_by_id(agent_id: str) -> Optional[Dict]:
             SELECT 
                 a.id,
                 a.name,
-                a.pixel_character,
-                a.avatar_url,
-                a.role,
+                a.type,
                 a.status,
                 a.current_task_id,
-                t.title as task_title,
+                t.id as task_id,
+                t.name as task_title,
                 t.status as task_status,
-                t.progress as task_progress
+                t.priority as task_progress
             FROM agents a
             LEFT JOIN tasks t ON a.current_task_id = t.id
             WHERE a.id = ?
@@ -256,16 +254,16 @@ def get_agent_by_id(agent_id: str) -> Optional[Dict]:
         return {
             "agentId": str(row["id"]),
             "name": row["name"] or "Unknown",
-            "pixel_character": row["pixel_character"],
-            "avatar_url": row["avatar_url"],
-            "role": row["role"] or "dev",
+            "pixel_character": None,
+            "avatar_url": None,
+            "role": row["type"] or "dev",
             "state": normalize_agent_state(row["status"]),
             "area": state_to_area(normalize_agent_state(row["status"])),
             "source": "github-collab",
-            "isMain": row["role"] == "main",
+            "isMain": row["type"] == "manager",
             "detail": _get_agent_detail(row),
             "updated_at": datetime.now().isoformat(),
-            "task_id": row["current_task_id"],
+            "task_id": row["task_id"],
             "task_title": row["task_title"],
             "task_progress": row["task_progress"],
         }
@@ -283,7 +281,7 @@ def update_agent_status(agent_id: str, status: str) -> bool:
         
         cursor.execute("""
             UPDATE agents
-            SET status = ?, updated_at = ?
+            SET status = ?, last_heartbeat = ?
             WHERE id = ?
         """, (status, datetime.now().isoformat(), agent_id))
         
