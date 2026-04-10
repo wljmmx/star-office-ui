@@ -28,7 +28,7 @@ from api import (
 )
 
 # Import services
-from utils import get_sync_service
+from utils import SyncService
 
 def create_app():
     """Create and configure Flask application."""
@@ -63,7 +63,7 @@ def create_app():
     app.register_blueprint(join_keys_bp)
     
     # Initialize sync service
-    sync_service = get_sync_service(socketio)
+    sync_service = SyncService(socketio)
     
     # Register SocketIO event handlers
     @socketio.on('connect')
