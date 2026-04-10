@@ -1,0 +1,14 @@
+{
+  "default": "https://api.dicebear.com/7.x/avataaars/svg?seed=default",
+  "main": "https://api.dicebear.com/7.x/avataaars/svg?seed=star&backgroundColor=b6e3f4",
+  "dev": "https://api.dicebear.com/7.x/avataaars/svg?seed=coder&backgroundColor=ffdfbf",
+  "test": "https://api.dicebear.com/7.x/avataaars/svg?seed=tester&backgroundColor=c0aede",
+  "deploy": "https://api.dicebear.com/7.x/avataaars/svg?seed=deploy&backgroundColor=d1d4f9",
+  "agents": {
+    "star": "https://api.dicebear.com/7.x/avataaars/svg?seed=star&backgroundColor=b6e3f4",
+    "coder1": "https://api.dicebear.com/7.x/avataaars/svg?seed=coder1&backgroundColor=ffdfbf",
+    "coder2": "https://api.dicebear.com/7.x/avataaars/svg?seed=coder2&backgroundColor=ffdfbf",
+    "test1": "https://api.dicebear.com/7.x/avataaars/svg?seed=test1&backgroundColor=c0aede",
+    "deploy1": "https://api.dicebear.com/7.x/avataaars/svg?seed=deploy1&backgroundColor=d1d4f9"
+  }
+}

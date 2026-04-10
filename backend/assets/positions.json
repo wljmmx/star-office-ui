@@ -1,0 +1,26 @@
+{
+  "breakroom": {
+    "x": 100,
+    "y": 100,
+    "width": 200,
+    "height": 150
+  },
+  "writing": {
+    "x": 350,
+    "y": 100,
+    "width": 400,
+    "height": 300
+  },
+  "meeting": {
+    "x": 800,
+    "y": 100,
+    "width": 300,
+    "height": 200
+  },
+  "error": {
+    "x": 100,
+    "y": 300,
+    "width": 200,
+    "height": 150
+  }
+}
