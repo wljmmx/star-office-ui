@@ -36,8 +36,8 @@ class DatabaseService:
             
             # Load agents
             cursor.execute("""
-                SELECT id, name, pixel_character, avatar_url, role, status, 
-                       current_task_id, created_at, updated_at
+                SELECT id, name, type, status, current_task_id, last_heartbeat, 
+                       capabilities, address, max_concurrent_tasks, session_id
                 FROM agents
                 ORDER BY id
             """)
@@ -45,7 +45,8 @@ class DatabaseService:
             
             # Load tasks
             cursor.execute("""
-                SELECT id, title, status, progress, assigned_to, created_at, updated_at
+                SELECT id, project_id, name, description, status, assigned_agent, 
+                       priority, created_at, updated_at, completed_at
                 FROM tasks
             """)
             task_rows = cursor.fetchall()
@@ -73,8 +74,8 @@ class DatabaseService:
             cursor = conn.cursor()
             
             cursor.execute("""
-                SELECT id, name, pixel_character, avatar_url, role, status, 
-                       current_task_id, created_at, updated_at
+                SELECT id, name, type, status, current_task_id, last_heartbeat,
+                       capabilities, address, max_concurrent_tasks, session_id
                 FROM agents
                 WHERE id = ?
             """, (agent_id,))
@@ -90,7 +91,8 @@ class DatabaseService:
             task = None
             if task_id:
                 cursor.execute("""
-                    SELECT id, title, status, progress, assigned_to, created_at, updated_at
+                    SELECT id, project_id, name, description, status, assigned_agent,
+                           priority, created_at, updated_at, completed_at
                     FROM tasks
                     WHERE id = ?
                 """, (task_id,))
@@ -128,7 +130,8 @@ class DatabaseService:
             cursor = conn.cursor()
             
             cursor.execute("""
-                SELECT id, title, status, progress, assigned_to, created_at, updated_at
+                SELECT id, project_id, name, description, status, assigned_agent,
+                       priority, created_at, updated_at, completed_at
                 FROM tasks
                 ORDER BY updated_at DESC
             """)

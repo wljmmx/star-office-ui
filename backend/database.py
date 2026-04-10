@@ -6,15 +6,26 @@ import os
 from typing import List, Dict, Optional
 from datetime import datetime
 
-# Database path configuration
+# Database path configuration - use environment variable or default
 GITHUB_COLLAB_DB = os.environ.get(
     "GITHUB_COLLAB_DB",
-    os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "skills", "github-collab", "github-collab.db")
+    os.path.join(os.path.dirname(os.path.dirname(__file__)), "github-collab", "github-collab.db")
 )
 
-# Resolve relative path
-if not os.path.isabs(GITHUB_COLLAB_DB):
-    GITHUB_COLLAB_DB = os.path.abspath(GITHUB_COLLAB_DB)
+# Fallback paths to try
+FALLBACK_PATHS = [
+    "/home/wljmmx/.openclaw/workspace/coder/skills/github-collab/github-collab.db",
+    "/workspace/skills/github-collab/github-collab.db",
+    os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "skills", "github-collab", "github-collab.db"),
+]
+
+# Find existing database
+if not os.path.exists(GITHUB_COLLAB_DB):
+    for path in FALLBACK_PATHS:
+        abs_path = os.path.abspath(path)
+        if os.path.exists(abs_path):
+            GITHUB_COLLAB_DB = abs_path
+            break
 
 
 def normalize_agent_state(status: str) -> str:
@@ -69,7 +80,7 @@ def state_to_area(state: str) -> str:
 def get_db_connection():
     """Get database connection."""
     if not os.path.exists(GITHUB_COLLAB_DB):
-        raise FileNotFoundError(f"github-collab database not found: {GITHUB_COLLAB_DB}")
+        raise FileNotFoundError(f"github-collab database not found at: {GITHUB_COLLAB_DB}\nChecked paths: {FALLBACK_PATHS}")
     
     conn = sqlite3.connect(GITHUB_COLLAB_DB)
     conn.row_factory = sqlite3.Row
@@ -107,14 +118,15 @@ def load_agents_from_db() -> List[Dict]:
             SELECT 
                 a.id,
                 a.name,
-                a.pixel_character,
-                a.avatar_url,
-                a.role,
+                a.type,
                 a.status,
+                a.capabilities,
+                a.address,
                 a.current_task_id,
-                t.title as task_title,
+                a.last_heartbeat,
+                t.name as task_name,
                 t.status as task_status,
-                t.progress as task_progress
+                t.description as task_description
             FROM agents a
             LEFT JOIN tasks t ON a.current_task_id = t.id
             ORDER BY a.id
@@ -128,25 +140,30 @@ def load_agents_from_db() -> List[Dict]:
         
         agents = []
         for row in rows:
+            state = normalize_agent_state(row["status"])
             agent = {
                 "agentId": str(row["id"]),
                 "name": row["name"] or "Unknown",
-                "pixel_character": row["pixel_character"],
-                "avatar_url": row["avatar_url"],
-                "role": row["role"] or "dev",
-                "state": normalize_agent_state(row["status"]),
-                "area": state_to_area(normalize_agent_state(row["status"])),
+                "type": row["type"] or "dev",
+                "state": state,
+                "area": state_to_area(state),
+                "capabilities": row["capabilities"] or "",
+                "address": row["address"] or "",
                 "source": "github-collab",
-                "isMain": row["role"] == "main",
+                "isMain": row["type"] == "manager",
                 "detail": _get_agent_detail(row),
-                "updated_at": datetime.now().isoformat(),
+                "updated_at": row["last_heartbeat"] or datetime.now().isoformat(),
                 "joinKey": None,
                 "authStatus": "approved",
                 "authExpiresAt": None,
                 "lastPushAt": None,
+                "pixel_character": None,
+                "avatar_url": None,
+                "role": row["type"] or "dev",
                 "task_id": row["current_task_id"],
-                "task_title": row["task_title"],
-                "task_progress": row["task_progress"],
+                "task_name": row["task_name"],
+                "task_status": row["task_status"],
+                "task_description": row["task_description"],
             }
             agents.append(agent)
         
@@ -167,9 +184,8 @@ def _get_agent_detail(row) -> str:
     if state == "idle":
         return "待命中，随时准备为你服务"
     
-    if row["task_title"]:
-        progress = row["task_progress"] or 0
-        return f"正在处理：{row['task_title']} ({progress}%)"
+    if row["task_name"]:
+        return f"正在处理：{row['task_name']}"
     
     state_messages = {
         "writing": "正在编写代码...",
@@ -191,12 +207,15 @@ def load_tasks_from_db() -> List[Dict]:
         cursor.execute("""
             SELECT 
                 id,
-                title,
+                project_id,
+                name,
+                description,
                 status,
-                progress,
-                assigned_to,
+                assigned_agent,
+                priority,
                 created_at,
-                updated_at
+                updated_at,
+                completed_at
             FROM tasks
             ORDER BY created_at DESC
         """)
@@ -208,12 +227,15 @@ def load_tasks_from_db() -> List[Dict]:
         for row in rows:
             task = {
                 "id": row["id"],
-                "title": row["title"],
+                "project_id": row["project_id"],
+                "name": row["name"],
+                "description": row["description"],
                 "status": row["status"],
-                "progress": row["progress"] or 0,
-                "assigned_to": row["assigned_to"],
+                "assigned_agent": row["assigned_agent"],
+                "priority": row["priority"],
                 "created_at": row["created_at"],
                 "updated_at": row["updated_at"],
+                "completed_at": row["completed_at"],
             }
             tasks.append(task)
         
@@ -302,11 +324,14 @@ if __name__ == "__main__":
     # Test database connection
     print(f"Database path: {GITHUB_COLLAB_DB}")
     print(f"Database exists: {os.path.exists(GITHUB_COLLAB_DB)}")
+    print(f"Database size: {os.path.getsize(GITHUB_COLLAB_DB) if os.path.exists(GITHUB_COLLAB_DB) else 0} bytes")
     
     agents = load_agents_from_db()
     print(f"\nLoaded {len(agents)} agents:")
     for agent in agents:
         print(f"  - {agent['name']} ({agent['agentId']}): {agent['state']} @ {agent['area']}")
+        if agent.get('task_title'):
+            print(f"    Task: {agent['task_title']} ({agent.get('task_progress', 0)}%)")
     
     tasks = load_tasks_from_db()
     print(f"\nLoaded {len(tasks)} tasks:")

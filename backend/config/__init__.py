@@ -12,15 +12,20 @@ class Config:
     # Frontend directory
     FRONTEND_DIR = BASE_DIR / "frontend"
     
-    # Database path - resolve relative to BASE_DIR
-    DATABASE_PATH = BASE_DIR / "skills" / "github-collab" / "github-collab.db"
+    # Database path - use local github-collab database
+    DATABASE_PATH = BASE_DIR / "github-collab" / "github-collab.db"
     
-    # If database doesn't exist, try alternative path
+    # Fallback if not found
     if not DATABASE_PATH.exists():
-        # Try: Star-Office-UI/../skills/github-collab/github-collab.db
+        # Try parent directory
         ALT_DB_PATH = BASE_DIR.parent / "skills" / "github-collab" / "github-collab.db"
         if ALT_DB_PATH.exists():
             DATABASE_PATH = ALT_DB_PATH
+    
+    # Final fallback to environment variable
+    ENV_DB_PATH = os.getenv("GITHUB_COLLAB_DB")
+    if ENV_DB_PATH and os.path.exists(ENV_DB_PATH):
+        DATABASE_PATH = Path(ENV_DB_PATH)
     
     # Data files
     ASSET_POSITIONS_FILE = BASE_DIR / "asset-positions.json"
