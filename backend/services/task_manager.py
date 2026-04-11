@@ -209,13 +209,17 @@ class TaskManager:
     @classmethod
     def create_task(
         cls,
-        name: str,
+        task_id: Optional[str] = None,
+        name: str = "",
         description: str = "",
         status: str = "pending",
         list_id: Optional[str] = None,
         checklist: Optional[List[dict]] = None,
     ) -> ExtendedTask:
         """Create a new task."""
+        if not task_id:
+            task_id = str(uuid4())
+        
         if not list_id:
             list_id = cls.map_status_to_list(status)
         
@@ -224,7 +228,7 @@ class TaskManager:
         ]
         
         return ExtendedTask(
-            task_id=str(uuid4()),
+            task_id=task_id,
             name=name,
             description=description,
             status=status,
