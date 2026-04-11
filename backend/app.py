@@ -1,4 +1,25 @@
 #!/usr/bin/env python3
+"""
+⚠️ DEPRECATED - 废弃警告
+
+此文件已被 main.py 取代，不再推荐使用。
+
+原因:
+- main.py 使用工厂模式 (create_app())，更符合 Flask 最佳实践
+- 模块化架构，易于维护和扩展
+- 支持依赖注入和测试
+- 新增 avatars 和 environments API
+
+迁移指南:
+1. 使用 main.py 作为应用入口
+2. 更新启动脚本调用 python3 main.py
+3. 配置从 config.py 管理
+4. API 路由从 api/ 蓝图导入
+
+保留此文件仅用于向后兼容和参考。
+"""
+
+# Legacy implementation - replaced by main.py
 """Star Office UI - Backend State Service (Modified for github-collab integration)"""
 
 from flask import Flask, jsonify, send_from_directory, make_response, request, session
@@ -10,14 +31,18 @@ import threading
 from pathlib import Path
 
 # Import database layer
-from database import (
+from services.database_service import (
     load_agents_from_db,
     load_tasks_from_db,
-    get_agent_by_id,
-    update_agent_status,
-    normalize_agent_state,
-    state_to_area,
+    normalize_agent_state as _normalize_agent_state_legacy,
+    _state_to_area_legacy,
 )
+
+# Alias for compatibility
+normalize_agent_state = _normalize_agent_state_legacy
+state_to_area = _state_to_area_legacy
+get_agent_by_id = None  # Not used in legacy code
+update_agent_status = None  # Not used in legacy code
 
 # Keep original store_utils for compatibility
 from store_utils import (

@@ -33,7 +33,7 @@ def get_agent_avatar(agent_id):
         if not agent:
             return jsonify({
                 "ok": False,
-                "msg": "Agent not found",
+                "msg": "代理未找到",
                 "data": None
             }), 404
         
@@ -69,7 +69,7 @@ def update_agent_avatar(agent_id):
         if not data:
             return jsonify({
                 "ok": False,
-                "msg": "No data provided",
+                "msg": "未提供数据",
                 "data": None
             }), 400
         
@@ -80,7 +80,7 @@ def update_agent_avatar(agent_id):
         if not AvatarManager.validate_avatar_data(avatar_type, avatar_data):
             return jsonify({
                 "ok": False,
-                "msg": "Invalid avatar data format",
+                "msg": "无效的头像数据格式",
                 "data": None
             }), 400
         
@@ -93,7 +93,7 @@ def update_agent_avatar(agent_id):
         if updated:
             return jsonify({
                 "ok": True,
-                "msg": "Avatar updated successfully",
+                "msg": "头像更新成功",
                 "data": {
                     "agent_id": agent_id,
                     "avatar_type": avatar_type,
@@ -102,7 +102,7 @@ def update_agent_avatar(agent_id):
         
         return jsonify({
             "ok": False,
-            "msg": "Agent not found or update failed",
+            "msg": "代理未找到或更新失败",
             "data": None
         }), 404
     
@@ -125,7 +125,7 @@ def generate_avatar(agent_id):
         if not agent:
             return jsonify({
                 "ok": False,
-                "msg": "Agent not found",
+                "msg": "代理未找到",
                 "data": None
             }), 404
         
@@ -133,8 +133,6 @@ def generate_avatar(agent_id):
         avatar = create_avatar_from_agent_type(agent.agent_type, agent.name)
         
         # Update database using DatabaseService
-        from services.database_service import get_db_service
-        
         db = get_db_service()
         updated = db.update_agent_avatar(
             agent_id, 
@@ -146,7 +144,7 @@ def generate_avatar(agent_id):
         if updated:
             return jsonify({
                 "ok": True,
-                "msg": "Avatar generated successfully",
+                "msg": "头像生成成功",
                 "data": {
                     "agent_id": agent_id,
                     "avatar": avatar.to_dict(),
@@ -155,7 +153,7 @@ def generate_avatar(agent_id):
         
         return jsonify({
             "ok": False,
-            "msg": "Failed to generate avatar",
+            "msg": "头像生成失败",
             "data": None
         }), 404
     

@@ -31,6 +31,7 @@ def get_all_environments():
         
         return jsonify({
             "ok": True,
+            "msg": "环境获取成功",
             "data": {
                 "environments": environments,
             }
@@ -40,6 +41,7 @@ def get_all_environments():
         # Table doesn't exist, return default
         return jsonify({
             "ok": True,
+            "msg": "环境获取成功",
             "data": {
                 "environments": [EnvironmentManager.get_default_environment().to_dict()],
             }
@@ -71,12 +73,13 @@ def get_environment(env_id):
         if not row:
             return jsonify({
                 "ok": False,
-                "msg": "Environment not found",
+                "msg": "环境未找到",
                 "data": None
             }), 404
         
         return jsonify({
             "ok": True,
+            "msg": "环境获取成功",
             "data": {
                 "environment": Environment.from_db(dict(row)).to_dict(),
             }
@@ -87,13 +90,14 @@ def get_environment(env_id):
         if env_id == "default":
             return jsonify({
                 "ok": True,
+                "msg": "环境获取成功",
                 "data": {
                     "environment": EnvironmentManager.get_default_environment().to_dict(),
                 }
             }), 200
         return jsonify({
             "ok": False,
-            "msg": "Environment not found",
+            "msg": "环境未找到",
             "data": None
         }), 404
     except Exception as e:
@@ -111,7 +115,7 @@ def create_environment():
         if not data.get('name'):
             return jsonify({
                 "ok": False,
-                "msg": "Name is required",
+                "msg": "名称是必需的",
                 "data": None
             }), 400
         
@@ -129,7 +133,7 @@ def create_environment():
         if not EnvironmentManager.validate_environment(env):
             return jsonify({
                 "ok": False,
-                "msg": "Invalid environment configuration",
+                "msg": "无效的环境配置",
                 "data": None
             }), 400
         
@@ -150,16 +154,16 @@ def create_environment():
         
         return jsonify({
             "ok": True,
-            "msg": "Environment created successfully",
+            "msg": "环境创建成功",
             "data": {
                 "environment": env.to_dict(),
             }
-        }), 201
+        }), 200
     
     except sqlite3.OperationalError:
         return jsonify({
             "ok": False,
-            "msg": "Environments table not found. Run migration first.",
+            "msg": "环境表未找到。请先运行迁移。",
             "data": None
         }), 500
     except Exception as e:
@@ -183,7 +187,7 @@ def update_environment(env_id):
             conn.close()
             return jsonify({
                 "ok": False,
-                "msg": "Environment not found",
+                "msg": "环境未找到",
                 "data": None
             }), 404
         
@@ -229,7 +233,7 @@ def update_environment(env_id):
         
         return jsonify({
             "ok": True,
-            "msg": "Environment updated successfully",
+            "msg": "环境更新成功",
             "data": {
                 "env_id": env_id,
             }
@@ -238,7 +242,7 @@ def update_environment(env_id):
     except sqlite3.OperationalError:
         return jsonify({
             "ok": False,
-            "msg": "Environments table not found",
+            "msg": "环境表未找到",
             "data": None
         }), 500
     except Exception as e:
@@ -270,7 +274,7 @@ def activate_environment(env_id):
         if updated:
             return jsonify({
                 "ok": True,
-                "msg": f"Environment '{env_id}' activated",
+                "msg": f"环境 '{env_id}' 已激活",
                 "data": {
                     "env_id": env_id,
                 }
@@ -278,14 +282,14 @@ def activate_environment(env_id):
         
         return jsonify({
             "ok": False,
-            "msg": "Environment not found",
+            "msg": "环境未找到",
             "data": None
         }), 404
     
     except sqlite3.OperationalError:
         return jsonify({
             "ok": False,
-            "msg": "Environments table not found",
+            "msg": "环境表未找到",
             "data": None
         }), 500
     except Exception as e:
@@ -300,6 +304,7 @@ def get_themes():
     """Get all available themes."""
     return jsonify({
         "ok": True,
+        "msg": "主题获取成功",
         "data": {
             "themes": EnvironmentManager.THEMES,
         }
@@ -333,14 +338,20 @@ def get_all_desks():
         
         return jsonify({
             "ok": True,
-            "desks": desks,
-        })
+            "msg": "工位获取成功",
+            "data": {
+                "desks": desks,
+            }
+        }), 200
     
     except sqlite3.OperationalError:
         return jsonify({
             "ok": True,
-            "desks": [],
-        })
+            "msg": "工位获取成功",
+            "data": {
+                "desks": [],
+            }
+        }), 200
     except Exception as e:
         return jsonify({
             "ok": False,
@@ -357,7 +368,7 @@ def assign_desk(agent_id):
         if not desk_number:
             return jsonify({
                 "ok": False,
-                "msg": "Desk number is required",
+                "msg": "工位编号是必需的",
                 "data": None
             }), 400
         
@@ -376,14 +387,16 @@ def assign_desk(agent_id):
         
         return jsonify({
             "ok": True,
-            "msg": f"Desk {desk_number} assigned to agent {agent_id}",
-            "desk": desk.to_dict(),
-        })
+            "msg": f"工位 {desk_number} 已分配给代理 {agent_id}",
+            "data": {
+                "desk": desk.to_dict(),
+            }
+        }), 200
     
     except sqlite3.OperationalError:
         return jsonify({
             "ok": False,
-            "msg": "agent_desks table not found"
+            "msg": "agent_desks 表未找到"
         }), 500
     except Exception as e:
         return jsonify({
@@ -407,7 +420,7 @@ def unassign_desk(agent_id):
         if deleted:
             return jsonify({
                 "ok": True,
-                "msg": f"Desk unassigned from agent {agent_id}",
+                "msg": f"工位已从代理 {agent_id} 解除分配",
                 "data": {
                     "agent_id": agent_id,
                 }
@@ -415,14 +428,14 @@ def unassign_desk(agent_id):
         
         return jsonify({
             "ok": False,
-            "msg": "No desk assignment found",
+            "msg": "未找到工位分配",
             "data": None
         }), 404
     
     except sqlite3.OperationalError:
         return jsonify({
             "ok": False,
-            "msg": "agent_desks table not found",
+            "msg": "agent_desks 表未找到",
             "data": None
         }), 500
     except Exception as e:

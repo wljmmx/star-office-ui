@@ -5,8 +5,8 @@ import sqlite3
 import os
 from datetime import datetime
 
-# Database path
-DB_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "skills", "github-collab", "github-collab.db")
+# Database path (relative to scripts/ directory)
+DB_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "..", "skills", "github-collab", "github-collab.db")
 
 # Resolve relative path
 if not os.path.isabs(DB_PATH):
@@ -19,6 +19,10 @@ def init_db():
     """Initialize database with tables and sample data."""
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
+
+    # Drop existing tables to allow fresh initialization
+    cursor.execute("DROP TABLE IF EXISTS tasks")
+    cursor.execute("DROP TABLE IF EXISTS agents")
 
     # Create agents table
     cursor.execute("""

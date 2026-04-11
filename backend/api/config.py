@@ -18,7 +18,7 @@ def get_config():
         
         return jsonify({
             "ok": True,
-            "msg": "Config retrieved successfully",
+            "msg": "配置获取成功",
             "data": config
         }), 200
     except Exception as e:
@@ -36,7 +36,7 @@ def update_config():
         save_json_file(Config.RUNTIME_CONFIG_FILE, data)
         return jsonify({
             "ok": True,
-            "msg": "Config updated successfully",
+            "msg": "配置更新成功",
             "data": data
         }), 200
     except Exception as e:

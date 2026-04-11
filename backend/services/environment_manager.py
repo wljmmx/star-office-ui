@@ -1,9 +1,16 @@
 """Environment management service for office environments."""
 
 import json
+import sqlite3
+import logging
 from typing import Dict, List, Optional
+from pathlib import Path
 from dataclasses import dataclass, field, asdict
 from datetime import datetime
+
+from config import Config
+
+logger = logging.getLogger(__name__)
 
 @dataclass
 class Environment:
@@ -103,6 +110,174 @@ class AgentDesk:
 
 class EnvironmentManager:
     """Manager for office environment operations."""
+    
+    def __init__(self, db_path: Optional[Path] = None):
+        """Initialize environment manager with database connection."""
+        self.db_path = db_path or Config.DATABASE_PATH
+    
+    def _get_connection(self) -> sqlite3.Connection:
+        """Get database connection."""
+        conn = sqlite3.connect(str(self.db_path))
+        conn.row_factory = sqlite3.Row
+        return conn
+    
+    def get_all_environments(self) -> List[Environment]:
+        """Get all environments from database."""
+        conn = self._get_connection()
+        try:
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                SELECT id, name, description, theme, background_image, 
+                       layout_config, settings, is_active, created_at, updated_at
+                FROM environments
+                ORDER BY is_active DESC, created_at ASC
+            """)
+            
+            rows = cursor.fetchall()
+            return [Environment.from_db(dict(row)) for row in rows]
+        
+        except sqlite3.OperationalError:
+            # Table doesn't exist, return default
+            return [self.get_default_environment()]
+        
+        finally:
+            conn.close()
+    
+    def get_environment_by_id(self, env_id: str) -> Optional[Environment]:
+        """Get a specific environment by ID."""
+        conn = self._get_connection()
+        try:
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                SELECT id, name, description, theme, background_image, 
+                       layout_config, settings, is_active, created_at, updated_at
+                FROM environments
+                WHERE id = ?
+            """, (env_id,))
+            
+            row = cursor.fetchone()
+            if not row:
+                # Return default if env_id is "default" and table doesn't exist
+                if env_id == "default":
+                    return self.get_default_environment()
+                return None
+            
+            return Environment.from_db(dict(row))
+        
+        except sqlite3.OperationalError:
+            # Return default if table doesn't exist
+            if env_id == "default":
+                return self.get_default_environment()
+            return None
+        
+        finally:
+            conn.close()
+    
+    def create_environment(self, env: Environment) -> bool:
+        """Create a new environment in database."""
+        if not self.validate_environment(env):
+            logger.error(f"Invalid environment configuration: {env.id}")
+            return False
+        
+        conn = self._get_connection()
+        try:
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                INSERT INTO environments (id, name, description, theme, background_image, 
+                                         layout_config, settings, is_active, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+            """, (
+                env.id, env.name, env.description, env.theme, env.background_image,
+                env.layout_config, env.settings, 1 if env.is_active else 0
+            ))
+            
+            conn.commit()
+            return cursor.rowcount > 0
+        
+        except sqlite3.Error as e:
+            logger.error(f"Failed to create environment {env.id}: {e}")
+            return False
+        
+        finally:
+            conn.close()
+    
+    def update_environment(self, env: Environment) -> bool:
+        """Update an environment in database."""
+        conn = self._get_connection()
+        try:
+            cursor = conn.cursor()
+            
+            # Check if exists
+            cursor.execute("SELECT id FROM environments WHERE id = ?", (env.id,))
+            if not cursor.fetchone():
+                logger.error(f"Environment not found: {env.id}")
+                return False
+            
+            cursor.execute("""
+                UPDATE environments
+                SET name = ?, description = ?, theme = ?, background_image = ?,
+                    layout_config = ?, settings = ?, is_active = ?, updated_at = datetime('now')
+                WHERE id = ?
+            """, (
+                env.name, env.description, env.theme, env.background_image,
+                env.layout_config, env.settings, 1 if env.is_active else 0, env.id
+            ))
+            
+            conn.commit()
+            return cursor.rowcount > 0
+        
+        except sqlite3.Error as e:
+            logger.error(f"Failed to update environment {env.id}: {e}")
+            return False
+        
+        finally:
+            conn.close()
+    
+    def delete_environment(self, env_id: str) -> bool:
+        """Delete an environment from database."""
+        conn = self._get_connection()
+        try:
+            cursor = conn.cursor()
+            
+            cursor.execute("DELETE FROM environments WHERE id = ?", (env_id,))
+            
+            conn.commit()
+            return cursor.rowcount > 0
+        
+        except sqlite3.Error as e:
+            logger.error(f"Failed to delete environment {env_id}: {e}")
+            return False
+        
+        finally:
+            conn.close()
+    
+    def activate_environment(self, env_id: str) -> bool:
+        """Activate an environment (deactivate others)."""
+        conn = self._get_connection()
+        try:
+            cursor = conn.cursor()
+            
+            # Deactivate all
+            cursor.execute("UPDATE environments SET is_active = 0")
+            
+            # Activate selected
+            cursor.execute("""
+                UPDATE environments SET is_active = 1, updated_at = datetime('now')
+                WHERE id = ?
+            """, (env_id,))
+            
+            conn.commit()
+            return cursor.rowcount > 0
+        
+        except sqlite3.Error as e:
+            logger.error(f"Failed to activate environment {env_id}: {e}")
+            return False
+        
+        finally:
+            conn.close()
     
     # Default environment configuration
     DEFAULT_ENVIRONMENT = {

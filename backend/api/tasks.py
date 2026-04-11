@@ -1,6 +1,7 @@
 """Tasks API routes."""
 
 import json
+import sqlite3
 from datetime import datetime
 from flask import Blueprint, jsonify, request
 from config import Config
@@ -49,7 +50,7 @@ def get_task(task_id):
         
         return jsonify({
             "ok": False,
-            "msg": "Task not found",
+            "msg": "任务未找到",
             "data": None
         }), 404
     except Exception as e:
@@ -130,7 +131,7 @@ def create_task():
         if not data.get('name'):
             return jsonify({
                 "ok": False,
-                "msg": "Task name is required",
+                "msg": "任务名称是必需的",
                 "data": None
             }), 400
         
@@ -195,7 +196,7 @@ def update_task(task_id):
             conn.close()
             return jsonify({
                 "ok": False,
-                "msg": "Task not found"
+                "msg": "任务未找到"
             }), 404
         
         # Build update query
@@ -243,7 +244,7 @@ def update_task(task_id):
         
         return jsonify({
             "ok": True,
-            "msg": "Task updated successfully",
+            "msg": "任务更新成功",
             "data": {
                 "task_id": task_id,
             }
@@ -271,7 +272,7 @@ def delete_task(task_id):
         if deleted:
             return jsonify({
                 "ok": True,
-                "msg": "Task deleted successfully",
+                "msg": "任务删除成功",
                 "data": {
                     "task_id": task_id,
                 }
@@ -279,7 +280,7 @@ def delete_task(task_id):
         
         return jsonify({
             "ok": False,
-            "msg": "Task not found",
+            "msg": "任务未找到",
             "data": None
         }), 404
     
@@ -293,8 +294,6 @@ def delete_task(task_id):
 def complete_checklist_item(task_id, item_id):
     """Mark a checklist item as complete."""
     try:
-        import json
-        
         conn = sqlite3.connect(str(Config.DATABASE_PATH))
         cursor = conn.cursor()
         
@@ -306,7 +305,7 @@ def complete_checklist_item(task_id, item_id):
             conn.close()
             return jsonify({
                 "ok": False,
-                "msg": "Task not found",
+                "msg": "任务未找到",
                 "data": None
             }), 404
         
@@ -330,7 +329,7 @@ def complete_checklist_item(task_id, item_id):
         
         return jsonify({
             "ok": True,
-            "msg": "Checklist item completed",
+            "msg": "清单项目已完成",
             "data": {
                 "task_id": task_id,
                 "item_id": item_id,

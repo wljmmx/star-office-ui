@@ -3,7 +3,7 @@
 import sys
 sys.path.insert(0, '/workspace/star-office-ui/backend')
 
-from database import GITHUB_COLLAB_DB, load_agents_from_db, load_tasks_from_db
+from services.database_service import GITHUB_COLLAB_DB, load_agents_from_db, load_tasks_from_db
 import os
 
 print(f"Database path: {GITHUB_COLLAB_DB}")

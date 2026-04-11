@@ -14,6 +14,7 @@ def get_all_agents():
         agents = db.load_all_agents()
         return jsonify({
             "ok": True,
+            "msg": "操作成功",
             "data": {
                 "agents": [agent.to_dict() for agent in agents]
             }
@@ -34,6 +35,7 @@ def get_agent(agent_id):
         if agent:
             return jsonify({
                 "ok": True,
+                "msg": "操作成功",
                 "data": {
                     "agent": agent.to_dict()
                 }
@@ -41,7 +43,7 @@ def get_agent(agent_id):
         
         return jsonify({
             "ok": False,
-            "msg": "Agent not found",
+            "msg": "代理未找到",
             "data": None
         }), 404
     
@@ -61,7 +63,7 @@ def update_agent_status(agent_id):
         if not new_status:
             return jsonify({
                 "ok": False,
-                "msg": "Missing state parameter",
+                "msg": "缺少状态参数",
                 "data": None
             }), 400
         
@@ -75,6 +77,7 @@ def update_agent_status(agent_id):
         if success:
             return jsonify({
                 "ok": True,
+                "msg": "操作成功",
                 "data": {
                     "agent_id": agent_id,
                     "state": normalized_state
@@ -83,7 +86,7 @@ def update_agent_status(agent_id):
         
         return jsonify({
             "ok": False,
-            "msg": "Failed to update agent status",
+            "msg": "更新代理状态失败",
             "data": None
         }), 500
     

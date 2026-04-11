@@ -3,10 +3,9 @@
 import sys
 sys.path.insert(0, '.')
 
-from database import (
+from services.database_service import (
     load_agents_from_db,
     load_tasks_from_db,
-    get_agent_by_id,
 )
 
 def test_agents():

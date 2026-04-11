@@ -1,7 +1,6 @@
 """Assets API routes."""
 
 from flask import Blueprint, jsonify, request
-from pathlib import Path
 from config import Config
 from utils.json_utils import load_json_file, save_json_file
 
@@ -14,7 +13,7 @@ def get_asset_positions():
         positions = load_json_file(Config.ASSET_POSITIONS_FILE, {})
         return jsonify({
             "ok": True,
-            "msg": "Success",
+            "msg": "操作成功",
             "data": positions
         }), 200
     except Exception as e:
@@ -32,7 +31,7 @@ def update_asset_positions():
         save_json_file(Config.ASSET_POSITIONS_FILE, data)
         return jsonify({
             "ok": True,
-            "msg": "Success",
+            "msg": "操作成功",
             "data": data
         }), 200
     except Exception as e:
@@ -49,7 +48,7 @@ def get_asset_defaults():
         defaults = load_json_file(Config.ASSET_DEFAULTS_FILE, {})
         return jsonify({
             "ok": True,
-            "msg": "Success",
+            "msg": "操作成功",
             "data": defaults
         }), 200
     except Exception as e:
@@ -67,7 +66,7 @@ def update_asset_defaults():
         save_json_file(Config.ASSET_DEFAULTS_FILE, data)
         return jsonify({
             "ok": True,
-            "msg": "Success",
+            "msg": "操作成功",
             "data": data
         }), 200
     except Exception as e:
