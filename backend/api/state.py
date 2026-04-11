@@ -31,11 +31,13 @@ def get_current_state():
         
         return jsonify({
             "ok": True,
-            "state": state
-        })
+            "msg": "获取状态成功",
+            "data": state
+        }), 200
     
     except Exception as e:
         return jsonify({
             "ok": False,
-            "msg": str(e)
+            "msg": str(e),
+            "data": None
         }), 500

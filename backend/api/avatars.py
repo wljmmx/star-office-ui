@@ -10,14 +10,16 @@ def get_all_avatar_types():
     """Get all available avatar types."""
     return jsonify({
         "ok": True,
-        "avatar_types": [
-            {"id": "pixel", "name": "像素风格", "description": "简单像素化角色"},
-            {"id": "emoji", "name": "表情符号", "description": "使用 emoji 作为头像"},
-            {"id": "image", "name": "图片", "description": "自定义图片头像"},
-            {"id": "3d", "name": "3D 模型", "description": "3D 角色模型"},
-        ],
-        "default_avatars": AvatarManager.DEFAULT_AVATARS,
-    })
+        "data": {
+            "avatar_types": [
+                {"id": "pixel", "name": "像素风格", "description": "简单像素化角色"},
+                {"id": "emoji", "name": "表情符号", "description": "使用 emoji 作为头像"},
+                {"id": "image", "name": "图片", "description": "自定义图片头像"},
+                {"id": "3d", "name": "3D 模型", "description": "3D 角色模型"},
+            ],
+            "default_avatars": AvatarManager.DEFAULT_AVATARS,
+        }
+    }), 200
 
 @avatars_bp.route('/<agent_id>', methods=['GET'])
 def get_agent_avatar(agent_id):
@@ -31,7 +33,8 @@ def get_agent_avatar(agent_id):
         if not agent:
             return jsonify({
                 "ok": False,
-                "msg": "Agent not found"
+                "msg": "Agent not found",
+                "data": None
             }), 404
         
         avatar_config = AvatarConfig(
@@ -43,15 +46,18 @@ def get_agent_avatar(agent_id):
         
         return jsonify({
             "ok": True,
-            "agent_id": agent_id,
-            "avatar": avatar_config.to_dict(),
-            "display": avatar_config.get_display_data(),
-        })
+            "data": {
+                "agent_id": agent_id,
+                "avatar": avatar_config.to_dict(),
+                "display": avatar_config.get_display_data(),
+            }
+        }), 200
     
     except Exception as e:
         return jsonify({
             "ok": False,
-            "msg": str(e)
+            "msg": str(e),
+            "data": None
         }), 500
 
 @avatars_bp.route('/<agent_id>', methods=['POST', 'PUT'])
@@ -63,7 +69,8 @@ def update_agent_avatar(agent_id):
         if not data:
             return jsonify({
                 "ok": False,
-                "msg": "No data provided"
+                "msg": "No data provided",
+                "data": None
             }), 400
         
         # Validate avatar data
@@ -73,42 +80,37 @@ def update_agent_avatar(agent_id):
         if not AvatarManager.validate_avatar_data(avatar_type, avatar_data):
             return jsonify({
                 "ok": False,
-                "msg": "Invalid avatar data format"
+                "msg": "Invalid avatar data format",
+                "data": None
             }), 400
         
-        # Update database
-        import sqlite3
-        from config import Config
+        # Update database using DatabaseService
+        from services.database_service import get_db_service
         
-        conn = sqlite3.connect(str(Config.DATABASE_PATH))
-        cursor = conn.cursor()
-        
-        cursor.execute("""
-            UPDATE agents
-            SET avatar_type = ?, avatar_data = ?, updated_at = datetime('now')
-            WHERE id = ?
-        """, (avatar_type, avatar_data, agent_id))
-        
-        conn.commit()
-        updated = cursor.rowcount > 0
-        conn.close()
+        db = get_db_service()
+        updated = db.update_agent_avatar(agent_id, avatar_type, avatar_data)
         
         if updated:
             return jsonify({
                 "ok": True,
                 "msg": "Avatar updated successfully",
-                "avatar_type": avatar_type,
-            })
+                "data": {
+                    "agent_id": agent_id,
+                    "avatar_type": avatar_type,
+                }
+            }), 200
         
         return jsonify({
             "ok": False,
-            "msg": "Agent not found or update failed"
+            "msg": "Agent not found or update failed",
+            "data": None
         }), 404
     
     except Exception as e:
         return jsonify({
             "ok": False,
-            "msg": str(e)
+            "msg": str(e),
+            "data": None
         }), 500
 
 @avatars_bp.route('/generate/<agent_id>', methods=['POST'])
@@ -123,43 +125,43 @@ def generate_avatar(agent_id):
         if not agent:
             return jsonify({
                 "ok": False,
-                "msg": "Agent not found"
+                "msg": "Agent not found",
+                "data": None
             }), 404
         
         # Generate avatar based on agent type
         avatar = create_avatar_from_agent_type(agent.agent_type, agent.name)
         
-        # Update database
-        import sqlite3
-        from config import Config
+        # Update database using DatabaseService
+        from services.database_service import get_db_service
         
-        conn = sqlite3.connect(str(Config.DATABASE_PATH))
-        cursor = conn.cursor()
-        
-        cursor.execute("""
-            UPDATE agents
-            SET avatar_type = ?, avatar_data = ?, pixel_character = ?, updated_at = datetime('now')
-            WHERE id = ?
-        """, (avatar.avatar_type, avatar.avatar_data, avatar.pixel_character, agent_id))
-        
-        conn.commit()
-        updated = cursor.rowcount > 0
-        conn.close()
+        db = get_db_service()
+        updated = db.update_agent_avatar(
+            agent_id, 
+            avatar.avatar_type, 
+            avatar.avatar_data,
+            pixel_character=avatar.pixel_character
+        )
         
         if updated:
             return jsonify({
                 "ok": True,
                 "msg": "Avatar generated successfully",
-                "avatar": avatar.to_dict(),
-            })
+                "data": {
+                    "agent_id": agent_id,
+                    "avatar": avatar.to_dict(),
+                }
+            }), 200
         
         return jsonify({
             "ok": False,
-            "msg": "Failed to generate avatar"
-        }), 500
+            "msg": "Failed to generate avatar",
+            "data": None
+        }), 404
     
     except Exception as e:
         return jsonify({
             "ok": False,
-            "msg": str(e)
+            "msg": str(e),
+            "data": None
         }), 500

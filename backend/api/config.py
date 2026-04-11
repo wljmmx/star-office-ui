@@ -17,12 +17,14 @@ def get_config():
         
         return jsonify({
             "ok": True,
-            "config": config
-        })
+            "msg": "Config retrieved successfully",
+            "data": config
+        }), 200
     except Exception as e:
         return jsonify({
             "ok": False,
-            "msg": str(e)
+            "msg": str(e),
+            "data": None
         }), 500
 
 @config_bp.route('', methods=['POST'])
@@ -32,10 +34,13 @@ def update_config():
         data = request.get_json() or {}
         save_json_file(Config.RUNTIME_CONFIG_FILE, data)
         return jsonify({
-            "ok": True
-        })
+            "ok": True,
+            "msg": "Config updated successfully",
+            "data": data
+        }), 200
     except Exception as e:
         return jsonify({
             "ok": False,
-            "msg": str(e)
+            "msg": str(e),
+            "data": None
         }), 500

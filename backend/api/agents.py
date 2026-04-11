@@ -13,8 +13,10 @@ def get_all_agents():
         agents = db.load_all_agents()
         return jsonify({
             "ok": True,
-            "agents": [agent.to_dict() for agent in agents]
-        })
+            "data": {
+                "agents": [agent.to_dict() for agent in agents]
+            }
+        }), 200
     except Exception as e:
         return jsonify({
             "ok": False,
@@ -31,12 +33,15 @@ def get_agent(agent_id):
         if agent:
             return jsonify({
                 "ok": True,
-                "agent": agent.to_dict()
-            })
+                "data": {
+                    "agent": agent.to_dict()
+                }
+            }), 200
         
         return jsonify({
             "ok": False,
-            "msg": "Agent not found"
+            "msg": "Agent not found",
+            "data": None
         }), 404
     
     except Exception as e:
@@ -55,7 +60,8 @@ def update_agent_status(agent_id):
         if not new_status:
             return jsonify({
                 "ok": False,
-                "msg": "Missing state parameter"
+                "msg": "Missing state parameter",
+                "data": None
             }), 400
         
         # Normalize state
@@ -68,12 +74,16 @@ def update_agent_status(agent_id):
         if success:
             return jsonify({
                 "ok": True,
-                "state": normalized_state
-            })
+                "data": {
+                    "agent_id": agent_id,
+                    "state": normalized_state
+                }
+            }), 200
         
         return jsonify({
             "ok": False,
-            "msg": "Failed to update agent status"
+            "msg": "Failed to update agent status",
+            "data": None
         }), 500
     
     except Exception as e:

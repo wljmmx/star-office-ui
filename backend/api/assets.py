@@ -13,12 +13,14 @@ def get_asset_positions():
         positions = load_json_file(Config.ASSET_POSITIONS_FILE, {})
         return jsonify({
             "ok": True,
-            "positions": positions
-        })
+            "msg": "Success",
+            "data": positions
+        }), 200
     except Exception as e:
         return jsonify({
             "ok": False,
-            "msg": str(e)
+            "msg": str(e),
+            "data": None
         }), 500
 
 @assets_bp.route('/positions', methods=['POST'])
@@ -28,12 +30,15 @@ def update_asset_positions():
         data = request.get_json() or {}
         save_json_file(Config.ASSET_POSITIONS_FILE, data)
         return jsonify({
-            "ok": True
-        })
+            "ok": True,
+            "msg": "Success",
+            "data": data
+        }), 200
     except Exception as e:
         return jsonify({
             "ok": False,
-            "msg": str(e)
+            "msg": str(e),
+            "data": None
         }), 500
 
 @assets_bp.route('/defaults', methods=['GET'])
@@ -43,12 +48,14 @@ def get_asset_defaults():
         defaults = load_json_file(Config.ASSET_DEFAULTS_FILE, {})
         return jsonify({
             "ok": True,
-            "defaults": defaults
-        })
+            "msg": "Success",
+            "data": defaults
+        }), 200
     except Exception as e:
         return jsonify({
             "ok": False,
-            "msg": str(e)
+            "msg": str(e),
+            "data": None
         }), 500
 
 @assets_bp.route('/defaults', methods=['POST'])
@@ -58,10 +65,13 @@ def update_asset_defaults():
         data = request.get_json() or {}
         save_json_file(Config.ASSET_DEFAULTS_FILE, data)
         return jsonify({
-            "ok": True
-        })
+            "ok": True,
+            "msg": "Success",
+            "data": data
+        }), 200
     except Exception as e:
         return jsonify({
             "ok": False,
-            "msg": str(e)
+            "msg": str(e),
+            "data": None
         }), 500

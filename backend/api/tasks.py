@@ -19,8 +19,10 @@ def get_all_tasks():
         tasks = db.load_all_tasks()
         return jsonify({
             "ok": True,
-            "tasks": [task.to_dict() for task in tasks]
-        })
+            "data": {
+                "tasks": [task.to_dict() for task in tasks]
+            }
+        }), 200
     except Exception as e:
         return jsonify({
             "ok": False,
@@ -39,12 +41,15 @@ def get_task(task_id):
         if task:
             return jsonify({
                 "ok": True,
-                "task": task.to_dict()
-            })
+                "data": {
+                    "task": task.to_dict()
+                }
+            }), 200
         
         return jsonify({
             "ok": False,
-            "msg": "Task not found"
+            "msg": "Task not found",
+            "data": None
         }), 404
     except Exception as e:
         return jsonify({
@@ -62,9 +67,11 @@ def get_agent_tasks(agent_id):
         
         return jsonify({
             "ok": True,
-            "tasks": [task.to_dict() for task in agent_tasks],
-            "count": len(agent_tasks)
-        })
+            "data": {
+                "tasks": [task.to_dict() for task in agent_tasks],
+                "count": len(agent_tasks)
+            }
+        }), 200
     except Exception as e:
         return jsonify({
             "ok": False,
@@ -84,10 +91,12 @@ def get_tasks_by_list(list_id):
         
         return jsonify({
             "ok": True,
-            "list_id": list_id,
-            "tasks": [task.to_dict() for task in list_tasks],
-            "count": len(list_tasks)
-        })
+            "data": {
+                "list_id": list_id,
+                "tasks": [task.to_dict() for task in list_tasks],
+                "count": len(list_tasks)
+            }
+        }), 200
     except Exception as e:
         return jsonify({
             "ok": False,
@@ -101,8 +110,10 @@ def get_all_lists():
         lists = TaskManager.get_default_lists()
         return jsonify({
             "ok": True,
-            "lists": [lst.to_dict() for lst in lists]
-        })
+            "data": {
+                "lists": [lst.to_dict() for lst in lists]
+            }
+        }), 200
     except Exception as e:
         return jsonify({
             "ok": False,
@@ -118,7 +129,8 @@ def create_task():
         if not data.get('name'):
             return jsonify({
                 "ok": False,
-                "msg": "Task name is required"
+                "msg": "Task name is required",
+                "data": None
             }), 400
         
         # Create task using TaskManager
@@ -160,7 +172,9 @@ def create_task():
         
         return jsonify({
             "ok": True,
-            "task": task.to_dict()
+            "data": {
+                "task": task.to_dict()
+            }
         }), 201
     
     except Exception as e:
@@ -232,8 +246,11 @@ def update_task(task_id):
         
         return jsonify({
             "ok": True,
-            "msg": "Task updated successfully"
-        })
+            "msg": "Task updated successfully",
+            "data": {
+                "task_id": task_id,
+            }
+        }), 200
     
     except Exception as e:
         return jsonify({
@@ -257,12 +274,16 @@ def delete_task(task_id):
         if deleted:
             return jsonify({
                 "ok": True,
-                "msg": "Task deleted successfully"
-            })
+                "msg": "Task deleted successfully",
+                "data": {
+                    "task_id": task_id,
+                }
+            }), 200
         
         return jsonify({
             "ok": False,
-            "msg": "Task not found"
+            "msg": "Task not found",
+            "data": None
         }), 404
     
     except Exception as e:
@@ -288,7 +309,8 @@ def complete_checklist_item(task_id, item_id):
             conn.close()
             return jsonify({
                 "ok": False,
-                "msg": "Task not found"
+                "msg": "Task not found",
+                "data": None
             }), 404
         
         checklist = json.loads(row['checklist']) if row['checklist'] else []
@@ -312,8 +334,12 @@ def complete_checklist_item(task_id, item_id):
         return jsonify({
             "ok": True,
             "msg": "Checklist item completed",
-            "checklist": checklist
-        })
+            "data": {
+                "task_id": task_id,
+                "item_id": item_id,
+                "checklist": checklist
+            }
+        }), 200
     
     except Exception as e:
         return jsonify({
