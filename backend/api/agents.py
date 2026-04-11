@@ -1,9 +1,10 @@
 """Agents API routes."""
 
-from flask import jsonify, request
-from . import agents_bp
+from flask import Blueprint, jsonify, request
 from services.database_service import get_db_service
 from config import Config
+
+agents_bp = Blueprint('agents', __name__, url_prefix='/api/agents')
 
 @agents_bp.route('', methods=['GET'])
 def get_all_agents():

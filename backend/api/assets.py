@@ -1,10 +1,11 @@
 """Assets API routes."""
 
-from flask import jsonify, request
+from flask import Blueprint, jsonify, request
 from pathlib import Path
-from . import assets_bp
-from utils.json_utils import load_json_file, save_json_file
 from config import Config
+from utils.json_utils import load_json_file, save_json_file
+
+assets_bp = Blueprint('assets', __name__, url_prefix='/api/assets')
 
 @assets_bp.route('/positions', methods=['GET'])
 def get_asset_positions():

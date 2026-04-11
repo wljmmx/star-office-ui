@@ -17,7 +17,7 @@ import os
 # Import configuration
 from config import Config
 
-# Import API blueprints
+# Import API blueprints (all blueprints imported from api package)
 from api import (
     agents_bp,
     tasks_bp,
@@ -25,11 +25,9 @@ from api import (
     assets_bp,
     config_bp,
     join_keys_bp,
+    avatars_bp,
+    environments_bp,
 )
-
-# Import new API blueprints
-from api.avatars import avatars_bp
-from api.environments import environments_bp
 
 # Import services
 from utils import SyncService

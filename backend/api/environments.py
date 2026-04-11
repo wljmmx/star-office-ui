@@ -288,11 +288,11 @@ def activate_environment(env_id):
             "msg": "Environments table not found",
             "data": None
         }), 500
-        }), 500
     except Exception as e:
         return jsonify({
             "ok": False,
-            "msg": str(e)
+            "msg": str(e),
+            "data": None
         }), 500
 
 @environments_bp.route('/themes', methods=['GET'])

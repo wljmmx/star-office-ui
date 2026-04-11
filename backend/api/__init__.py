@@ -1,20 +1,22 @@
 """API routes package."""
 
-from flask import Blueprint
-
-# Create blueprints
-agents_bp = Blueprint('agents', __name__, url_prefix='/api/agents')
-tasks_bp = Blueprint('tasks', __name__, url_prefix='/api/tasks')
-state_bp = Blueprint('state', __name__, url_prefix='/api/state')
-assets_bp = Blueprint('assets', __name__, url_prefix='/api/assets')
-config_bp = Blueprint('config', __name__, url_prefix='/api/config')
-join_keys_bp = Blueprint('join_keys', __name__, url_prefix='/api/join-keys')
+# Import all blueprints from individual modules
+from .agents import agents_bp
+from .tasks import tasks_bp
+from .state import state_bp
+from .assets import assets_bp
+from .config import config_bp
+from .join_keys import join_keys_bp
+from .avatars import avatars_bp
+from .environments import environments_bp
 
 __all__ = [
     'agents_bp',
-    'tasks_bp', 
+    'tasks_bp',
     'state_bp',
     'assets_bp',
     'config_bp',
     'join_keys_bp',
+    'avatars_bp',
+    'environments_bp',
 ]

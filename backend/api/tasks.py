@@ -3,6 +3,7 @@
 import json
 from datetime import datetime
 from flask import Blueprint, jsonify, request
+from config import Config
 from services.database_service import get_db_service
 from services.task_manager import TaskManager, TaskList, TaskListService
 
@@ -143,10 +144,6 @@ def create_task():
         )
         
         # Save to database
-        import sqlite3
-        from config import Config
-        from datetime import datetime
-        
         conn = sqlite3.connect(str(Config.DATABASE_PATH))
         cursor = conn.cursor()
         

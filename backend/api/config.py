@@ -1,9 +1,10 @@
 """Config API routes."""
 
-from flask import jsonify, request
-from . import config_bp
+from flask import Blueprint, jsonify, request
 from utils.json_utils import load_json_file, save_json_file
 from config import Config
+
+config_bp = Blueprint('config', __name__, url_prefix='/api/config')
 
 @config_bp.route('', methods=['GET'])
 def get_config():

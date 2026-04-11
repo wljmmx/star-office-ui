@@ -1,9 +1,10 @@
 """State API routes."""
 
-from flask import jsonify
+from flask import Blueprint, jsonify
 from datetime import datetime
-from . import state_bp
 from services.database_service import get_db_service
+
+state_bp = Blueprint('state', __name__, url_prefix='/api/state')
 
 @state_bp.route('', methods=['GET'])
 def get_current_state():
