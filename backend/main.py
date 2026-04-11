@@ -27,6 +27,10 @@ from api import (
     join_keys_bp,
 )
 
+# Import new API blueprints
+from api.avatars import avatars_bp
+from api.environments import environments_bp
+
 # Import services
 from utils import SyncService
 
@@ -61,6 +65,10 @@ def create_app():
     app.register_blueprint(assets_bp)
     app.register_blueprint(config_bp)
     app.register_blueprint(join_keys_bp)
+    
+    # Register new API blueprints
+    app.register_blueprint(avatars_bp)
+    app.register_blueprint(environments_bp)
     
     # Initialize sync service
     sync_service = SyncService(socketio)

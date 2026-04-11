@@ -1,5 +1,6 @@
 """Data models for Star Office UI."""
 
+import json
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional, List
@@ -19,6 +20,13 @@ class Agent:
     task_name: Optional[str] = None
     task_status: str = "pending"
     updated_at: str = field(default_factory=lambda: datetime.now().isoformat())
+    # Avatar fields
+    avatar_type: str = "pixel"
+    avatar_data: Optional[str] = None
+    pixel_character: Optional[str] = None
+    avatar_url: Optional[str] = None
+    # Desk assignment
+    desk_number: Optional[int] = None
     
     @classmethod
     def from_db(cls, db_record: dict, task: Optional['Task'] = None) -> 'Agent':
@@ -33,7 +41,14 @@ class Agent:
             capabilities=db_record.get('capabilities', ''),
             address=db_record.get('address', ''),
             task_id=db_record.get('current_task_id'),
-            updated_at=db_record.get('last_heartbeat', datetime.now().isoformat())
+            updated_at=db_record.get('last_heartbeat', datetime.now().isoformat()),
+            # Avatar fields
+            avatar_type=db_record.get('avatar_type', 'pixel'),
+            avatar_data=db_record.get('avatar_data'),
+            pixel_character=db_record.get('pixel_character'),
+            avatar_url=db_record.get('avatar_url'),
+            # Desk assignment
+            desk_number=db_record.get('desk_number'),
         )
         
         # Add task info if available
@@ -106,9 +121,12 @@ class Agent:
             "task_status": self.task_status,
             "updated_at": self.updated_at,
             "isMain": self.agent_type == "manager",
-            "pixel_character": None,
-            "avatar_url": None,
+            "pixel_character": self.pixel_character,
+            "avatar_url": self.avatar_url,
             "role": self.agent_type,
+            "avatar_type": self.avatar_type,
+            "avatar_data": self.avatar_data,
+            "desk_number": self.desk_number,
         }
 
 @dataclass
@@ -124,6 +142,10 @@ class Task:
     created_at: str = field(default_factory=lambda: datetime.now().isoformat())
     updated_at: str = field(default_factory=lambda: datetime.now().isoformat())
     completed_at: Optional[str] = None
+    # Task list management fields
+    list_id: Optional[str] = None
+    position: int = 0
+    checklist: Optional[str] = None  # JSON string
     
     @classmethod
     def from_db(cls, db_record: dict) -> 'Task':
@@ -139,10 +161,23 @@ class Task:
             created_at=db_record.get('created_at', datetime.now().isoformat()),
             updated_at=db_record.get('updated_at', datetime.now().isoformat()),
             completed_at=db_record.get('completed_at'),
+            # Task list fields
+            list_id=db_record.get('list_id'),
+            position=db_record.get('position', 0),
+            checklist=db_record.get('checklist'),
         )
     
     def to_dict(self) -> dict:
         """Convert to dictionary."""
+        from typing import List, Dict
+        checklist_items: List[Dict] = []
+        if self.checklist:
+            try:
+                checklist_data = json.loads(self.checklist)
+                checklist_items = checklist_data if isinstance(checklist_data, list) else []
+            except (json.JSONDecodeError, TypeError):
+                checklist_items = []
+        
         return {
             "taskId": self.task_id,
             "name": self.task_name,
@@ -154,4 +189,7 @@ class Task:
             "created_at": self.created_at,
             "updated_at": self.updated_at,
             "completed_at": self.completed_at,
+            "list_id": self.list_id,
+            "position": self.position,
+            "checklist": checklist_items,
         }

@@ -34,10 +34,11 @@ class DatabaseService:
         try:
             cursor = conn.cursor()
             
-            # Load agents
+            # Load agents with avatar fields
             cursor.execute("""
                 SELECT id, name, type, status, current_task_id, last_heartbeat, 
-                       capabilities, address, max_concurrent_tasks, session_id
+                       capabilities, address, max_concurrent_tasks, session_id,
+                       avatar_type, avatar_data, pixel_character, avatar_url
                 FROM agents
                 ORDER BY id
             """)
@@ -46,7 +47,8 @@ class DatabaseService:
             # Load tasks
             cursor.execute("""
                 SELECT id, project_id, name, description, status, assigned_agent, 
-                       priority, created_at, updated_at, completed_at
+                       priority, created_at, updated_at, completed_at,
+                       list_id, position, checklist
                 FROM tasks
             """)
             task_rows = cursor.fetchall()
@@ -75,7 +77,8 @@ class DatabaseService:
             
             cursor.execute("""
                 SELECT id, name, type, status, current_task_id, last_heartbeat,
-                       capabilities, address, max_concurrent_tasks, session_id
+                       capabilities, address, max_concurrent_tasks, session_id,
+                       avatar_type, avatar_data, pixel_character, avatar_url
                 FROM agents
                 WHERE id = ?
             """, (agent_id,))
@@ -92,7 +95,8 @@ class DatabaseService:
             if task_id:
                 cursor.execute("""
                     SELECT id, project_id, name, description, status, assigned_agent,
-                           priority, created_at, updated_at, completed_at
+                           priority, created_at, updated_at, completed_at,
+                           list_id, position, checklist
                     FROM tasks
                     WHERE id = ?
                 """, (task_id,))
@@ -131,7 +135,8 @@ class DatabaseService:
             
             cursor.execute("""
                 SELECT id, project_id, name, description, status, assigned_agent,
-                       priority, created_at, updated_at, completed_at
+                       priority, created_at, updated_at, completed_at,
+                       list_id, position, checklist
                 FROM tasks
                 ORDER BY updated_at DESC
             """)
