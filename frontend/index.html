@@ -195,6 +195,100 @@
             border-radius: 8px;
             margin-bottom: 20px;
         }
+        
+        /* Socket status indicator */
+        .socket-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--bg-card);
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+        
+        .socket-status.status-connected {
+            color: var(--success);
+        }
+        
+        .socket-status.status-disconnected {
+            color: var(--danger);
+        }
+        
+        .socket-status.status-reconnecting {
+            color: var(--warning);
+        }
+        
+        .socket-status.status-error {
+            color: var(--danger);
+        }
+        
+        /* Error notification */
+        .socket-error-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            max-width: 400px;
+            background: var(--bg-card);
+            border-left: 4px solid var(--danger);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            border-radius: 8px;
+            padding: 15px;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        .notification-content {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        
+        .notification-icon {
+            font-size: 1.5em;
+            flex-shrink: 0;
+        }
+        
+        .notification-text {
+            flex: 1;
+            color: var(--text-primary);
+        }
+        
+        .notification-text strong {
+            display: block;
+            margin-bottom: 4px;
+        }
+        
+        .notification-text p {
+            margin: 0;
+            font-size: 0.9em;
+            color: var(--text-secondary);
+        }
+        
+        .notification-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.5em;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+        
+        .notification-close:hover {
+            color: var(--text-primary);
+        }
     </style>
 </head>
 <body>
@@ -209,8 +303,9 @@
             <!-- Status Bar -->
             <div class="status-bar">
                 <div class="connection-status">
-                    <div class="status-indicator" :class="{ connected: isConnected }"></div>
-                    <span>{{ isConnected ? '已连接' : '连接中...' }}</span>
+                    <div id="socket-status" class="socket-status status-disconnected">
+                        ○ 离线
+                    </div>
                 </div>
                 <div>
                     <span>Agent 数量：{{ agents.length }}</span>
@@ -267,6 +362,7 @@
         </div>
     </div>
     
+    <script src="js/socket.js"></script>
     <script>
         new Vue({
             el: '#app',

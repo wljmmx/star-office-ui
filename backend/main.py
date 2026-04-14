@@ -7,6 +7,9 @@ Modern modular architecture with:
 - Dependency injection
 - Clean API layering
 - Real-time synchronization
+- Connection pooling
+- Input validation
+- API versioning
 """
 
 from flask import Flask, make_response, send_from_directory
@@ -17,8 +20,9 @@ import os
 # Import configuration
 from config import Config
 
-# Import API blueprints
+# Import API blueprints (now versioned)
 from api import (
+    API_VERSION,
     agents_bp,
     tasks_bp,
     state_bp,
@@ -29,9 +33,22 @@ from api import (
 
 # Import services
 from utils import get_sync_service
+from services.database_service import get_db_service, reset_db_service
 
-def create_app():
-    """Create and configure Flask application."""
+# Import error handlers
+from api.errors import register_error_handlers
+
+
+def create_app(testing: bool = False):
+    """
+    Create and configure Flask application.
+    
+    Args:
+        testing: If True, enable testing mode with reset capability
+        
+    Returns:
+        Configured Flask application instance
+    """
     
     app = Flask(
         __name__,
@@ -45,6 +62,7 @@ def create_app():
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SAMESITE="Lax",
         SESSION_COOKIE_SECURE=False,
+        TESTING=testing,
     )
     
     # Initialize SocketIO
@@ -54,7 +72,7 @@ def create_app():
         async_mode=Config.SOCKETIO_ASYNC_MODE
     )
     
-    # Register API blueprints
+    # Register versioned API blueprints
     app.register_blueprint(agents_bp)
     app.register_blueprint(tasks_bp)
     app.register_blueprint(state_bp)
@@ -107,11 +125,58 @@ def create_app():
         """Serve static files."""
         return send_from_directory(Config.FRONTEND_DIR, filename)
     
+    # API version info endpoint
+    @app.route("/api/version", methods=["GET"])
+    def api_version():
+        """Return current API version."""
+        from flask import jsonify
+        return jsonify({
+            "version": API_VERSION,
+            "endpoints": [
+                "/api/v1/agents",
+                "/api/v1/tasks",
+                "/api/v1/state",
+                "/api/v1/assets",
+                "/api/v1/config",
+                "/api/v1/join-keys",
+            ]
+        })
+    
+    # Health check endpoint
+    @app.route("/health", methods=["GET"])
+    def health_check():
+        """Health check endpoint."""
+        from flask import jsonify
+        return jsonify({"status": "healthy", "version": API_VERSION}), 200
+    
+    # API health check endpoint (for Docker HEALTHCHECK)
+    @app.route("/api/health", methods=["GET"])
+    def api_health_check():
+        """API health check endpoint for Docker and load balancers."""
+        from flask import jsonify
+        from datetime import datetime
+        return jsonify({
+            "status": "healthy",
+            "timestamp": datetime.utcnow().isoformat(),
+            "service": "star-office-ui",
+            "version": API_VERSION
+        }), 200
+    
+    # Cleanup endpoint for testing
+    @app.route("/_test/reset-db", methods=["POST"])
+    def reset_database():
+        """Reset database service (testing only)."""
+        if app.config.get('TESTING'):
+            reset_db_service()
+            return {"status": "reset"}, 200
+        return {"error": "Not allowed in production"}, 403
+    
     # Store socketio in app for later access
     app.socketio = socketio
     app.sync_service = sync_service
     
     return app
+
 
 def main():
     """Main entry point."""
@@ -130,6 +195,7 @@ def main():
     print(f"🔢 Port: {Config.PORT}")
     print(f"🔧 Debug: {Config.DEBUG}")
     print(f"🔄 Sync Interval: {Config.SYNC_INTERVAL}s")
+    print(f"📦 API Version: v1")
     print("=" * 60)
     print(f"🚀 Starting server at http://{Config.HOST}:{Config.PORT}")
     print("=" * 60)
@@ -145,6 +211,7 @@ def main():
     
     # Cleanup
     app.sync_service.stop()
+
 
 if __name__ == "__main__":
     main()

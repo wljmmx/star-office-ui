@@ -9,6 +9,7 @@ state_bp = Blueprint('state', __name__, url_prefix='/api/state')
 assets_bp = Blueprint('assets', __name__, url_prefix='/api/assets')
 config_bp = Blueprint('config', __name__, url_prefix='/api/config')
 join_keys_bp = Blueprint('join_keys', __name__, url_prefix='/api/join-keys')
+health_bp = Blueprint('health', __name__, url_prefix='/api/health')
 
 __all__ = [
     'agents_bp',
@@ -17,4 +18,5 @@ __all__ = [
     'assets_bp',
     'config_bp',
     'join_keys_bp',
+    'health_bp',
 ]

@@ -1,4 +1,19 @@
-"""Data models for Star Office UI."""
+"""Data Models Module for Star Office UI.
+
+This module defines the core data models used throughout the application.
+It provides type-safe dataclasses for agents and tasks with conversion
+methods for database operations and API serialization.
+
+Classes:
+    Agent: Represents an AI agent with state, tasks, and metadata
+    Task: Represents a work task assigned to agents
+
+Usage:
+    >>> from models import Agent, Task
+    >>> agent = Agent(agent_id="1", name="Alice", state="writing")
+    >>> agent_dict = agent.to_dict()
+    >>> db_agent = Agent.from_db(record, task)
+"""
 
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -6,7 +21,32 @@ from typing import Optional, List
 
 @dataclass
 class Agent:
-    """Agent data model."""
+    """Agent data model representing an AI agent in the system.
+    
+    Attributes:
+        agent_id: Unique identifier for the agent
+        name: Display name of the agent
+        pixel_character: Optional pixel art character filename
+        avatar_url: Optional URL to avatar image
+        role: Agent role (default: 'dev')
+        state: Current agent state (idle, writing, researching, executing, syncing, error)
+        detail: Additional status detail or current task description
+        area: Physical area where agent is located (breakroom, writing, error)
+        task_id: ID of currently assigned task
+        task_title: Title of currently assigned task
+        task_progress: Progress percentage of current task (0-100)
+        updated_at: ISO format timestamp of last update
+    
+    Example:
+        >>> agent = Agent(
+        ...     agent_id="agent-001",
+        ...     name="CodeBot",
+        ...     state="writing",
+        ...     task_title="Implement feature X"
+        ... )
+        >>> print(agent.state)
+        'writing'
+    """
     agent_id: str
     name: str
     pixel_character: Optional[str] = None
@@ -22,7 +62,20 @@ class Agent:
     
     @classmethod
     def from_db(cls, db_record: dict, task: Optional['Task'] = None) -> 'Agent':
-        """Create Agent from database record."""
+        """Create Agent instance from database record.
+        
+        Args:
+            db_record: Dictionary containing agent data from database
+            task: Optional associated Task object
+            
+        Returns:
+            Agent instance populated with database values
+            
+        Example:
+            >>> record = {'id': '1', 'name': 'Alice', 'status': 'writing'}
+            >>> agent = Agent.from_db(record)
+            >>> assert agent.agent_id == '1'
+        """
         agent = cls(
             agent_id=db_record.get('id', ''),
             name=db_record.get('name', 'Unknown'),
@@ -45,7 +98,23 @@ class Agent:
     
     @staticmethod
     def map_state_to_area(state: str) -> str:
-        """Map agent state to area."""
+        """Map agent state to physical area location.
+        
+        Maps agent work states to their corresponding physical areas
+        in the office layout for visualization purposes.
+        
+        Args:
+            state: Current agent state string
+            
+        Returns:
+            Area name where agent should be displayed
+            
+        Mapping:
+            - 'idle' -> 'breakroom'
+            - 'writing', 'researching', 'executing', 'syncing' -> 'writing'
+            - 'error' -> 'error'
+            - Unknown states -> 'breakroom'
+        """
         mapping = {
             "idle": "breakroom",
             "writing": "writing",
@@ -57,7 +126,16 @@ class Agent:
         return mapping.get(state, "breakroom")
     
     def to_dict(self) -> dict:
-        """Convert to dictionary."""
+        """Convert Agent instance to dictionary for API serialization.
+        
+        Returns:
+            Dictionary with camelCase keys for frontend compatibility
+            
+        Example:
+            >>> agent = Agent(agent_id="1", name="Test")
+            >>> d = agent.to_dict()
+            >>> assert d['agentId'] == '1'
+        """
         return {
             "agentId": self.agent_id,
             "name": self.name,
@@ -75,7 +153,25 @@ class Agent:
 
 @dataclass
 class Task:
-    """Task data model."""
+    """Task data model representing a work task.
+    
+    Attributes:
+        task_id: Unique identifier for the task
+        title: Task title/description
+        status: Current task status (pending, in_progress, completed)
+        progress: Completion percentage (0-100)
+        assigned_to: ID of agent assigned to this task
+        created_at: ISO format timestamp when task was created
+        updated_at: ISO format timestamp of last update
+    
+    Example:
+        >>> task = Task(
+        ...     task_id="task-001",
+        ...     title="Implement login feature",
+        ...     status="in_progress",
+        ...     progress=50
+        ... )
+    """
     task_id: str
     title: str
     status: str = "pending"
@@ -86,7 +182,14 @@ class Task:
     
     @classmethod
     def from_db(cls, db_record: dict) -> 'Task':
-        """Create Task from database record."""
+        """Create Task instance from database record.
+        
+        Args:
+            db_record: Dictionary containing task data from database
+            
+        Returns:
+            Task instance populated with database values
+        """
         return cls(
             task_id=db_record.get('id', ''),
             title=db_record.get('title', 'Unknown Task'),
@@ -98,7 +201,11 @@ class Task:
         )
     
     def to_dict(self) -> dict:
-        """Convert to dictionary."""
+        """Convert Task instance to dictionary for API serialization.
+        
+        Returns:
+            Dictionary with camelCase keys for frontend compatibility
+        """
         return {
             "taskId": self.task_id,
             "title": self.title,

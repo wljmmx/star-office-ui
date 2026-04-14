@@ -10,14 +10,18 @@ import threading
 from pathlib import Path
 
 # Import database layer
-from database import (
+from services.database_service import (
     load_agents_from_db,
     load_tasks_from_db,
-    get_agent_by_id,
-    update_agent_status,
-    normalize_agent_state,
-    state_to_area,
+    normalize_agent_state as _normalize_agent_state_legacy,
+    _state_to_area_legacy,
 )
+
+# Alias for compatibility
+normalize_agent_state = _normalize_agent_state_legacy
+state_to_area = _state_to_area_legacy
+get_agent_by_id = None  # Not used in legacy code
+update_agent_status = None  # Not used in legacy code
 
 # Keep original store_utils for compatibility
 from store_utils import (

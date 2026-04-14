@@ -1,39 +1,133 @@
+# Star Office UI - Docker Compose Configuration
+# 
+# Provides:
+# - Production-ready Flask + SocketIO server
+# - Nginx reverse proxy with SSL support (optional)
+# - Persistent data storage
+# - Health checks and auto-restart
+# - Network isolation
+#
+# Usage:
+#   docker-compose up -d
+#   docker-compose logs -f
+#   docker-compose down
+
 version: '3.8'
 
 services:
+  # Main application server
   star-office-ui:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - BUILD_TARGET=production
     container_name: star-office-ui
+    image: star-office-ui:latest
+    
+    # Port mapping (host:container)
     ports:
       - "5000:5000"
+    
+    # Environment configuration
     environment:
       - DATABASE_PATH=/data/github-collab.db
       - DEBUG=false
       - HOST=0.0.0.0
       - PORT=5000
+      - SOUI_DEBUG=false
+      - SOUI_HOST=0.0.0.0
+      - SOUI_PORT=5000
+      # IMPORTANT: Set a strong secret key in production
+      - FLASK_SECRET_KEY=${FLASK_SECRET_KEY:-change-me-in-production}
+      - SOUI_CORS_ORIGINS=${SOUI_CORS_ORIGINS:-http://localhost:80}
+      - SOUI_COOKIE_SECURE=${SOUI_COOKIE_SECURE:-false}
+      - SOUI_SYNC_INTERVAL=${SOUI_SYNC_INTERVAL:-5}
+    
+    # Volume mounts for persistent data
     volumes:
       - star-office-data:/data
+      # Optional: Mount local database for development
+      # - ./data:/data
+    
+    # Restart policy
     restart: unless-stopped
+    
+    # Health check configuration
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/api/health')"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 5s
+      start_period: 10s
+    
+    # Resource limits (optional)
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    
+    # Network configuration
+    networks:
+      - star-office-network
+    
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
-  # 可选：Nginx 反向代理
-  nginx:
-    image: nginx:alpine
-    container_name: star-office-nginx
-    ports:
-      - "80:80"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-    depends_on:
-      - star-office-ui
-    restart: unless-stopped
+  # Nginx reverse proxy (optional - uncomment to enable)
+  # Provides:
+  # - SSL/TLS termination
+  # - Static file caching
+  # - Request compression
+  # - Load balancing (if needed)
+  #
+  # To enable SSL:
+  # 1. Place certificates in ./ssl/
+  # 2. Uncomment the ssl volume and ports
+  # 3. Update nginx.conf with your domain
+  #
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: star-office-nginx
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"  # Uncomment for SSL
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
+  #     - ./ssl:/etc/nginx/ssl:ro  # Uncomment for SSL
+  #   depends_on:
+  #     - star-office-ui
+  #   restart: unless-stopped
+  #   networks:
+  #     - star-office-network
+  #   healthcheck:
+  #     test: ["CMD", "nginx", "-t"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
 
+# Named volumes for persistent data
 volumes:
   star-office-data:
+    driver: local
+    # Optional: Specify volume location
+    # driver_opts:
+    #   type: none
+    #   device: ./data
+    #   o: bind
+
+# Network configuration for service isolation
+networks:
+  star-office-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16

@@ -1,9 +1,9 @@
-"""Agents API routes."""
+"""Agents API routes with input validation."""
 
 from flask import jsonify, request
 from . import agents_bp
 from services.database_service import get_db_service
-from config import Config
+from validators import AgentStatusUpdateRequest, AgentIDPath, ValidationErrorResponse
 
 @agents_bp.route('', methods=['GET'])
 def get_all_agents():
@@ -21,10 +21,20 @@ def get_all_agents():
             "msg": str(e)
         }), 500
 
+
 @agents_bp.route('/<agent_id>', methods=['GET'])
 def get_agent(agent_id):
-    """Get a specific agent."""
+    """Get a specific agent by ID."""
     try:
+        # Validate agent_id path parameter
+        try:
+            AgentIDPath(agent_id=agent_id)
+        except Exception as e:
+            return jsonify({
+                "ok": False,
+                "msg": f"Invalid agent_id: {str(e)}"
+            }), 400
+        
         db = get_db_service()
         agent = db.get_agent_by_id(agent_id)
         
@@ -45,24 +55,33 @@ def get_agent(agent_id):
             "msg": str(e)
         }), 500
 
+
 @agents_bp.route('/<agent_id>/status', methods=['POST'])
 def update_agent_status(agent_id):
-    """Update agent status."""
+    """Update agent status with validated input."""
     try:
-        data = request.get_json() or {}
-        new_status = data.get('state', '')
-        
-        if not new_status:
+        # Validate agent_id path parameter
+        try:
+            AgentIDPath(agent_id=agent_id)
+        except Exception as e:
             return jsonify({
                 "ok": False,
-                "msg": "Missing state parameter"
+                "msg": f"Invalid agent_id: {str(e)}"
             }), 400
         
-        # Normalize state
-        db = get_db_service()
-        normalized_state = db.normalize_agent_state(new_status)
+        # Validate request body
+        try:
+            data = request.get_json() or {}
+            validation = AgentStatusUpdateRequest(**data)
+            normalized_state = validation.state
+        except Exception as e:
+            return jsonify({
+                "ok": False,
+                "msg": f"Invalid request: {str(e)}"
+            }), 400
         
         # Update database
+        db = get_db_service()
         success = db.update_agent_status(agent_id, normalized_state)
         
         if success:
@@ -73,8 +92,8 @@ def update_agent_status(agent_id):
         
         return jsonify({
             "ok": False,
-            "msg": "Failed to update agent status"
-        }), 500
+            "msg": "Failed to update agent status - agent not found"
+        }), 404
     
     except Exception as e:
         return jsonify({
