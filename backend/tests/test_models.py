@@ -15,11 +15,8 @@ class TestAgentModel(unittest.TestCase):
         
         self.assertEqual(agent.agent_id, "test-001")
         self.assertEqual(agent.name, "TestBot")
-<<<<<<< HEAD
         self.assertEqual(agent.role, "dev")
-=======
         self.assertEqual(agent.agent_type, "dev")
->>>>>>> origin/master
         self.assertEqual(agent.state, "idle")
         self.assertEqual(agent.area, "breakroom")
     
@@ -29,11 +26,8 @@ class TestAgentModel(unittest.TestCase):
             'id': 'test-001',
             'name': 'TestBot',
             'pixel_character': '🤖',
-<<<<<<< HEAD
             'role': 'main',
-=======
             'type': 'main',
->>>>>>> origin/master
             'status': 'writing',
             'current_task_id': 'task-001',
             'updated_at': '2024-01-01T00:00:00'
@@ -41,12 +35,9 @@ class TestAgentModel(unittest.TestCase):
         
         task = Task(
             task_id='task-001',
-<<<<<<< HEAD
             title='Test Task',
             progress=50
-=======
             task_name='Test Task'
->>>>>>> origin/master
         )
         
         agent = Agent.from_db(db_record, task)
@@ -55,12 +46,9 @@ class TestAgentModel(unittest.TestCase):
         self.assertEqual(agent.name, 'TestBot')
         self.assertEqual(agent.state, 'writing')
         self.assertEqual(agent.area, 'writing')
-<<<<<<< HEAD
         self.assertEqual(agent.task_title, 'Test Task')
         self.assertEqual(agent.task_progress, 50)
-=======
         self.assertEqual(agent.task_name, 'Test Task')
->>>>>>> origin/master
     
     def test_state_to_area_mapping(self):
         """Test state to area mapping."""
@@ -91,7 +79,6 @@ class TestTaskModel(unittest.TestCase):
         """Test task creation with default values."""
         task = Task(
             task_id="task-001",
-<<<<<<< HEAD
             title="Test Task"
         )
         
@@ -99,29 +86,24 @@ class TestTaskModel(unittest.TestCase):
         self.assertEqual(task.title, "Test Task")
         self.assertEqual(task.status, "pending")
         self.assertEqual(task.progress, 0)
-=======
             task_name="Test Task"
         )
         
         self.assertEqual(task.task_id, "task-001")
         self.assertEqual(task.task_name, "Test Task")
         self.assertEqual(task.status, "pending")
->>>>>>> origin/master
     
     def test_task_from_db(self):
         """Test task creation from database record."""
         db_record = {
             'id': 'task-001',
-<<<<<<< HEAD
             'title': 'Test Task',
             'status': 'in_progress',
             'progress': 75,
             'assigned_to': 'agent-001',
-=======
             'name': 'Test Task',
             'status': 'in_progress',
             'assigned_agent': 'agent-001',
->>>>>>> origin/master
             'created_at': '2024-01-01T00:00:00',
             'updated_at': '2024-01-01T00:00:00'
         }
@@ -129,38 +111,29 @@ class TestTaskModel(unittest.TestCase):
         task = Task.from_db(db_record)
         
         self.assertEqual(task.task_id, 'task-001')
-<<<<<<< HEAD
         self.assertEqual(task.title, 'Test Task')
         self.assertEqual(task.status, 'in_progress')
         self.assertEqual(task.progress, 75)
         self.assertEqual(task.assigned_to, 'agent-001')
-=======
         self.assertEqual(task.task_name, 'Test Task')
         self.assertEqual(task.status, 'in_progress')
         self.assertEqual(task.assigned_agent, 'agent-001')
->>>>>>> origin/master
     
     def test_task_to_dict(self):
         """Test task to dictionary conversion."""
         task = Task(
             task_id="task-001",
-<<<<<<< HEAD
             title="Test Task",
             progress=50
-=======
             task_name="Test Task"
->>>>>>> origin/master
         )
         
         data = task.to_dict()
         
         self.assertEqual(data['taskId'], "task-001")
-<<<<<<< HEAD
         self.assertEqual(data['title'], "Test Task")
         self.assertEqual(data['progress'], 50)
-=======
         self.assertEqual(data['name'], "Test Task")
->>>>>>> origin/master
 
 if __name__ == '__main__':
     unittest.main()

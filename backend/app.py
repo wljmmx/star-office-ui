@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-<<<<<<< HEAD
-=======
 """
 ⚠️ DEPRECATED - 废弃警告
 
@@ -22,7 +20,6 @@
 """
 
 # Legacy implementation - replaced by main.py
->>>>>>> origin/master
 """Star Office UI - Backend State Service (Modified for github-collab integration)"""
 
 from flask import Flask, jsonify, send_from_directory, make_response, request, session
@@ -34,7 +31,6 @@ import threading
 from pathlib import Path
 
 # Import database layer
-<<<<<<< HEAD
 from database import (
     load_agents_from_db,
     load_tasks_from_db,
@@ -51,7 +47,6 @@ from api.state import state_bp
 from api.assets import assets_bp
 from api.config import config_bp
 from api.join_keys import join_keys_bp
-=======
 from services.database_service import (
     load_agents_from_db,
     load_tasks_from_db,
@@ -64,7 +59,6 @@ normalize_agent_state = _normalize_agent_state_legacy
 state_to_area = _state_to_area_legacy
 get_agent_by_id = None  # Not used in legacy code
 update_agent_status = None  # Not used in legacy code
->>>>>>> origin/master
 
 # Keep original store_utils for compatibility
 from store_utils import (
@@ -158,7 +152,6 @@ def save_join_keys(data):
     _store_save_join_keys(JOIN_KEYS_FILE, data)
 
 
-<<<<<<< HEAD
 # Register blueprints
 app.register_blueprint(agents_bp)
 app.register_blueprint(tasks_bp)
@@ -168,8 +161,6 @@ app.register_blueprint(config_bp)
 app.register_blueprint(join_keys_bp)
 
 
-=======
->>>>>>> origin/master
 @app.route("/", methods=["GET"])
 def index():
     """Serve the main page."""

@@ -1,11 +1,9 @@
 """Tasks API routes."""
 
-<<<<<<< HEAD
 from flask import jsonify, request
 from . import tasks_bp
 from database import get_db_connection
 from datetime import datetime
-=======
 import json
 import sqlite3
 from datetime import datetime
@@ -18,13 +16,11 @@ tasks_bp = Blueprint('tasks', __name__, url_prefix='/api/tasks')
 
 # Initialize task list service
 task_list_service = TaskListService()
->>>>>>> origin/master
 
 @tasks_bp.route('', methods=['GET'])
 def get_all_tasks():
     """Get all tasks."""
     try:
-<<<<<<< HEAD
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -62,7 +58,6 @@ def get_all_tasks():
             "tasks": tasks
         })
     
-=======
         db = get_db_service()
         tasks = db.load_all_tasks()
         return jsonify({
@@ -71,7 +66,6 @@ def get_all_tasks():
                 "tasks": [task.to_dict() for task in tasks]
             }
         }), 200
->>>>>>> origin/master
     except Exception as e:
         return jsonify({
             "ok": False,
@@ -82,7 +76,6 @@ def get_all_tasks():
 def get_task(task_id):
     """Get a specific task."""
     try:
-<<<<<<< HEAD
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -124,7 +117,6 @@ def get_task(task_id):
             "ok": True,
             "task": task
         })
-=======
         db = get_db_service()
         # Load all tasks and find the one we need
         tasks = db.load_all_tasks()
@@ -264,7 +256,6 @@ def create_task():
                 "task": task.to_dict()
             }
         }), 201
->>>>>>> origin/master
     
     except Exception as e:
         return jsonify({
@@ -278,7 +269,6 @@ def update_task(task_id):
     try:
         data = request.get_json() or {}
         
-<<<<<<< HEAD
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -345,7 +335,6 @@ def update_task(task_id):
             "ok": False,
             "msg": "No updates provided"
         }), 400
-=======
         conn = sqlite3.connect(str(Config.DATABASE_PATH))
         cursor = conn.cursor()
         
@@ -495,7 +484,6 @@ def complete_checklist_item(task_id, item_id):
                 "checklist": checklist
             }
         }), 200
->>>>>>> origin/master
     
     except Exception as e:
         return jsonify({
