@@ -60,7 +60,7 @@ class DatabaseService:
         finally:
             conn.close()
     
-    def get_project_by_id(self, project_id: int) -> Optional[Project]:
+    def get_project_by_id(self, project_id: str) -> Optional[Project]:
         """Get a specific project by ID."""
         conn = self._get_connection()
         try:
@@ -91,7 +91,7 @@ class DatabaseService:
             # Load agents with project info
             cursor.execute("""
                 SELECT a.id, a.name, a.pixel_character, a.avatar_url, a.role, a.status, 
-                       a.current_task_id, a.current_project_id, a.project_name, a.project_url,
+                       a.current_task_id, a.project_id, a.project_name, a.project_url,
                        a.created_at, a.updated_at
                 FROM agents a
                 ORDER BY a.id
@@ -141,12 +141,12 @@ class DatabaseService:
                 
                 # Get project from agent's project fields or from task
                 project = None
-                if db_record.get('current_project_id'):
-                    project = projects_map.get(db_record['current_project_id'])
+                if db_record.get('project_id'):
+                    project = projects_map.get(db_record['project_id'])
                     if not project:
                         # Create project from stored fields
                         project = Project.from_db({
-                            'id': db_record['current_project_id'],
+                            'id': db_record['project_id'],
                             'name': db_record.get('project_name'),
                             'github_url': db_record.get('project_url'),
                         })
@@ -170,7 +170,7 @@ class DatabaseService:
             
             cursor.execute("""
                 SELECT id, name, pixel_character, avatar_url, role, status, 
-                       current_task_id, current_project_id, project_name, project_url,
+                       current_task_id, project_id, project_name, project_url,
                        created_at, updated_at
                 FROM agents
                 WHERE id = ?
@@ -204,8 +204,8 @@ class DatabaseService:
                     task = Task.from_db(task_dict, project)
             
             # Get project from agent's project fields if not from task
-            if not project and db_record.get('current_project_id'):
-                project = self.get_project_by_id(db_record['current_project_id'])
+            if not project and db_record.get('project_id'):
+                project = self.get_project_by_id(db_record['project_id'])
             
             return Agent.from_db(db_record, task, project)
         
