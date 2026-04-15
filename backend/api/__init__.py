@@ -1,15 +1,15 @@
 """API routes package."""
 
-from flask import Blueprint
+# Import blueprints from individual modules
+from .agents import agents_bp
+from .tasks import tasks_bp
+from .projects import projects_bp
+from .state import state_bp
+from .assets import assets_bp
+from .config import config_bp
+from .join_keys import join_keys_bp
 
-# Create blueprints
-agents_bp = Blueprint('agents', __name__, url_prefix='/api/agents')
-tasks_bp = Blueprint('tasks', __name__, url_prefix='/api/tasks')
-projects_bp = Blueprint('projects', __name__, url_prefix='/api/projects')
-state_bp = Blueprint('state', __name__, url_prefix='/api/state')
-assets_bp = Blueprint('assets', __name__, url_prefix='/api/assets')
-config_bp = Blueprint('config', __name__, url_prefix='/api/config')
-join_keys_bp = Blueprint('join_keys', __name__, url_prefix='/api/join-keys')
+from flask import Blueprint
 health_bp = Blueprint('health', __name__, url_prefix='/api')
 
 __all__ = [
