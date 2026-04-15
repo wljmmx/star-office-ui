@@ -52,8 +52,9 @@ class Config:
     PORT = int(os.getenv("SOUI_PORT", "5000"))
     DEBUG = os.getenv("SOUI_DEBUG", "true").lower() == "true"
     
-    # Socket.IO CORS config
+    # Socket.IO config
     SOCKETIO_CORS_ORIGINS = ["*"]
+    SOCKETIO_ASYNC_MODE = "threading"
     
     # Agent states
     VALID_AGENT_STATES = ["idle", "writing", "researching", "executing", "syncing", "error"]
