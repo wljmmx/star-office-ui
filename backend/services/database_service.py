@@ -83,28 +83,31 @@ class DatabaseService:
             conn.close()
     
     def load_all_agents(self) -> List[Agent]:
-        """Load all agents from database."""
+        """Load all agents from database with project associations."""
         conn = self._get_connection()
         try:
             cursor = conn.cursor()
             
-            # Load agents
+            # Load agents with project info
             cursor.execute("""
-                SELECT id, name, pixel_character, avatar_url, role, status, 
-                       current_task_id, created_at, updated_at
-                FROM agents
-                ORDER BY id
+                SELECT a.id, a.name, a.pixel_character, a.avatar_url, a.role, a.status, 
+                       a.current_task_id, a.current_project_id, a.project_name, a.project_url,
+                       a.created_at, a.updated_at
+                FROM agents a
+                ORDER BY a.id
             """)
             agent_rows = cursor.fetchall()
             
-            # Load tasks
+            # Load tasks with project info
             cursor.execute("""
-                SELECT id, title, status, progress, assigned_to, created_at, updated_at
-                FROM tasks
+                SELECT t.id, t.title, t.status, t.progress, t.assigned_to, 
+                       t.project_id, t.project_name, t.project_url,
+                       t.created_at, t.updated_at
+                FROM tasks t
             """)
             task_rows = cursor.fetchall()
             
-            # Load projects
+            # Load all projects
             cursor.execute("""
                 SELECT id, name, github_url, description, status, work_dir, 
                        created_at, updated_at
@@ -113,21 +116,43 @@ class DatabaseService:
             project_rows = cursor.fetchall()
             
             # Create lookups
-            tasks_map = {row['id']: Task.from_db(dict(row)) for row in task_rows}
+            tasks_map = {}
+            for row in task_rows:
+                row_dict = dict(row)
+                project = None
+                if row_dict.get('project_id'):
+                    project = Project.from_db({
+                        'id': row_dict['project_id'],
+                        'name': row_dict.get('project_name'),
+                        'github_url': row_dict.get('project_url'),
+                    })
+                tasks_map[row['id']] = Task.from_db(row_dict, project)
+            
             projects_map = {row['id']: Project.from_db(dict(row)) for row in project_rows}
             
             # Create agents with task and project info
             agents = []
             for row in agent_rows:
                 db_record = dict(row)
-                task = tasks_map.get(db_record.get('current_task_id'))
-                project = None
                 
-                # Try to get project from task (if task has project association)
-                if task:
-                    # For now, we'll need to join with task_assignments or similar
-                    # to get project info. This is a simplification.
-                    pass
+                # Get task if assigned
+                task_id = db_record.get('current_task_id')
+                task = tasks_map.get(task_id) if task_id else None
+                
+                # Get project from agent's project fields or from task
+                project = None
+                if db_record.get('current_project_id'):
+                    project = projects_map.get(db_record['current_project_id'])
+                    if not project:
+                        # Create project from stored fields
+                        project = Project.from_db({
+                            'id': db_record['current_project_id'],
+                            'name': db_record.get('project_name'),
+                            'github_url': db_record.get('project_url'),
+                        })
+                elif task and task.project_id:
+                    # Inherit project from task
+                    project = projects_map.get(task.project_id)
                 
                 agent = Agent.from_db(db_record, task, project)
                 agents.append(agent)
@@ -138,14 +163,15 @@ class DatabaseService:
             conn.close()
     
     def get_agent_by_id(self, agent_id: str) -> Optional[Agent]:
-        """Get a specific agent by ID."""
+        """Get a specific agent by ID with project associations."""
         conn = self._get_connection()
         try:
             cursor = conn.cursor()
             
             cursor.execute("""
                 SELECT id, name, pixel_character, avatar_url, role, status, 
-                       current_task_id, created_at, updated_at
+                       current_task_id, current_project_id, project_name, project_url,
+                       created_at, updated_at
                 FROM agents
                 WHERE id = ?
             """, (agent_id,))
@@ -163,13 +189,23 @@ class DatabaseService:
             
             if task_id:
                 cursor.execute("""
-                    SELECT id, title, status, progress, assigned_to, created_at, updated_at
+                    SELECT id, title, status, progress, assigned_to, 
+                           project_id, project_name, project_url,
+                           created_at, updated_at
                     FROM tasks
                     WHERE id = ?
                 """, (task_id,))
                 task_row = cursor.fetchone()
                 if task_row:
-                    task = Task.from_db(dict(task_row), project)
+                    task_dict = dict(task_row)
+                    # Get project for task
+                    if task_dict.get('project_id'):
+                        project = self.get_project_by_id(task_dict['project_id'])
+                    task = Task.from_db(task_dict, project)
+            
+            # Get project from agent's project fields if not from task
+            if not project and db_record.get('current_project_id'):
+                project = self.get_project_by_id(db_record['current_project_id'])
             
             return Agent.from_db(db_record, task, project)
         
@@ -195,18 +231,37 @@ class DatabaseService:
             conn.close()
     
     def load_all_tasks(self) -> List[Task]:
-        """Load all tasks from database."""
+        """Load all tasks from database with project associations."""
         conn = self._get_connection()
         try:
             cursor = conn.cursor()
             
             cursor.execute("""
-                SELECT id, title, status, progress, assigned_to, created_at, updated_at
+                SELECT id, title, status, progress, assigned_to, 
+                       project_id, project_name, project_url,
+                       created_at, updated_at
                 FROM tasks
                 ORDER BY updated_at DESC
             """)
             
-            tasks = [Task.from_db(dict(row)) for row in cursor.fetchall()]
+            tasks = []
+            for row in cursor.fetchall():
+                row_dict = dict(row)
+                project = None
+                
+                # Load project if associated
+                if row_dict.get('project_id'):
+                    project = self.get_project_by_id(row_dict['project_id'])
+                    if not project:
+                        # Create project from stored fields
+                        project = Project.from_db({
+                            'id': row_dict['project_id'],
+                            'name': row_dict.get('project_name'),
+                            'github_url': row_dict.get('project_url'),
+                        })
+                
+                tasks.append(Task.from_db(row_dict, project))
+            
             return tasks
         
         finally:

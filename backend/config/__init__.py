@@ -12,33 +12,26 @@ class Config:
     # Frontend directory
     FRONTEND_DIR = BASE_DIR / "frontend"
     
-<<<<<<< HEAD
-    # Database path - resolve relative to BASE_DIR
+    # Database path - multiple fallback strategies
     DATABASE_PATH = BASE_DIR / "skills" / "github-collab" / "github-collab.db"
     
-    # If database doesn't exist, try alternative path
+    # Fallback 1: Try github-collab directory
     if not DATABASE_PATH.exists():
-        # Try: Star-Office-UI/../skills/github-collab/github-collab.db
-=======
-    # Database path - use local github-collab database
-    DATABASE_PATH = BASE_DIR / "github-collab" / "github-collab.db"
+        ALT_DB_PATH = BASE_DIR / "github-collab" / "github-collab.db"
+        if ALT_DB_PATH.exists():
+            DATABASE_PATH = ALT_DB_PATH
     
-    # Fallback if not found
+    # Fallback 2: Try parent skills directory
     if not DATABASE_PATH.exists():
-        # Try parent directory
->>>>>>> origin/master
         ALT_DB_PATH = BASE_DIR.parent / "skills" / "github-collab" / "github-collab.db"
         if ALT_DB_PATH.exists():
             DATABASE_PATH = ALT_DB_PATH
     
-<<<<<<< HEAD
-=======
-    # Final fallback to environment variable
+    # Fallback 3: Try environment variable
     ENV_DB_PATH = os.getenv("GITHUB_COLLAB_DB")
-    if ENV_DB_PATH and os.path.exists(ENV_DB_PATH):
+    if ENV_DB_PATH and Path(ENV_DB_PATH).exists():
         DATABASE_PATH = Path(ENV_DB_PATH)
     
->>>>>>> origin/master
     # Data files
     ASSET_POSITIONS_FILE = BASE_DIR / "asset-positions.json"
     ASSET_DEFAULTS_FILE = BASE_DIR / "asset-defaults.json"
