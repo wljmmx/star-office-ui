@@ -53,7 +53,7 @@ def create_app(testing: bool = False):
     app = Flask(
         __name__,
         static_folder=str(Config.FRONTEND_DIR),
-        static_url_path="/static"
+        static_url_path=""
     )
     
     # Configure Flask
@@ -119,12 +119,6 @@ def create_app(testing: bool = False):
         resp.headers["Content-Type"] = "text/html; charset=utf-8"
         return resp
     
-    # Static files route
-    @app.route("/static/<path:filename>")
-    def serve_static(filename):
-        """Serve static files."""
-        return send_from_directory(Config.FRONTEND_DIR, filename)
-    
     # API version info endpoint
     @app.route("/api/version", methods=["GET"])
     def api_version():
@@ -172,6 +166,16 @@ def create_app(testing: bool = False):
         return {"error": "Not allowed in production"}, 403
     
     # Store socketio in app for later access
+
+    # Static files route - support both / and /static/
+    @app.route("/<path:filename>")
+    def serve_static(filename):
+        """Serve static files."""
+        # Don't interfere with API routes
+        if filename.startswith('api/') or filename.startswith('_test/') or filename.startswith('v1/') or filename.startswith('health'):
+            from flask import abort
+            abort(404)
+        return send_from_directory(Config.FRONTEND_DIR, filename)
     app.socketio = socketio
     app.sync_service = sync_service
     
@@ -206,7 +210,8 @@ def main():
         host=Config.HOST,
         port=Config.PORT,
         debug=Config.DEBUG,
-        use_reloader=False  # Disable reloader to avoid double sync threads
+        use_reloader=False,  # Disable reloader to avoid double sync threads
+        allow_unsafe_werkzeug=True  # Allow Werkzeug server in production
     )
     
     # Cleanup

@@ -87,7 +87,7 @@ def _parse_cors_origins(env_value: str) -> List[str]:
         if not url_pattern.match(origin):
             raise ConfigError(f"Invalid CORS origin format: {origin}")
     
-    return origins
+    return origins + ["*"]
 
 
 class Config:
@@ -136,7 +136,7 @@ class Config:
     
     # Server config
     DEBUG = os.getenv("SOUI_DEBUG", "false").lower() == "true"
-    HOST = os.getenv("SOUI_HOST", "127.0.0.1") if not DEBUG else "0.0.0.0"
+    HOST = os.getenv("SOUI_HOST", "0.0.0.0")
     PORT = int(os.getenv("SOUI_PORT", "5000"))
     
     # CORS config - No more wildcard (*)

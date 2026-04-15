@@ -39,7 +39,7 @@ services:
       - SOUI_HOST=0.0.0.0
       - SOUI_PORT=5000
       # IMPORTANT: Set a strong secret key in production
-      - FLASK_SECRET_KEY=${FLASK_SECRET_KEY:-change-me-in-production}
+      - FLASK_SECRET_KEY=SecretKey2489c045471228081097cc70c4d911cc!@#
       - SOUI_CORS_ORIGINS=${SOUI_CORS_ORIGINS:-http://localhost:80}
       - SOUI_COOKIE_SECURE=${SOUI_COOKIE_SECURE:-false}
       - SOUI_SYNC_INTERVAL=${SOUI_SYNC_INTERVAL:-5}
