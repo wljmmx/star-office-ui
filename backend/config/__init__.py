@@ -12,25 +12,28 @@ class Config:
     # Frontend directory
     FRONTEND_DIR = BASE_DIR / "frontend"
     
-    # Database path - multiple fallback strategies
-    DATABASE_PATH = BASE_DIR / "skills" / "github-collab" / "github-collab.db"
-    
-    # Fallback 1: Try github-collab directory
-    if not DATABASE_PATH.exists():
-        ALT_DB_PATH = BASE_DIR / "github-collab" / "github-collab.db"
-        if ALT_DB_PATH.exists():
-            DATABASE_PATH = ALT_DB_PATH
-    
-    # Fallback 2: Try parent skills directory
-    if not DATABASE_PATH.exists():
-        ALT_DB_PATH = BASE_DIR.parent / "skills" / "github-collab" / "github-collab.db"
-        if ALT_DB_PATH.exists():
-            DATABASE_PATH = ALT_DB_PATH
-    
-    # Fallback 3: Try environment variable
-    ENV_DB_PATH = os.getenv("GITHUB_COLLAB_DB")
-    if ENV_DB_PATH and Path(ENV_DB_PATH).exists():
+    # Database path - prioritize environment variable
+    ENV_DB_PATH = os.getenv("DATABASE_PATH")
+    if ENV_DB_PATH:
         DATABASE_PATH = Path(ENV_DB_PATH)
+    else:
+        # Fallback to default path
+        DATABASE_PATH = BASE_DIR / "skills" / "github-collab" / "github-collab.db"
+        
+        # Fallback 1: Try github-collab directory
+        if not DATABASE_PATH.exists():
+            ALT_DB_PATH = BASE_DIR / "github-collab" / "github-collab.db"
+            if ALT_DB_PATH.exists():
+                DATABASE_PATH = ALT_DB_PATH
+        
+        # Fallback 2: Try parent skills directory
+        if not DATABASE_PATH.exists():
+            ALT_DB_PATH = BASE_DIR.parent / "skills" / "github-collab" / "github-collab.db"
+            if ALT_DB_PATH.exists():
+                DATABASE_PATH = ALT_DB_PATH
+    
+    # Ensure database directory exists
+    DATABASE_PATH.parent.mkdir(parents=True, exist_ok=True)
     
     # Data files
     ASSET_POSITIONS_FILE = BASE_DIR / "asset-positions.json"
@@ -49,32 +52,11 @@ class Config:
     PORT = int(os.getenv("SOUI_PORT", "5000"))
     DEBUG = os.getenv("SOUI_DEBUG", "true").lower() == "true"
     
-    # SocketIO config
-    SOCKETIO_CORS_ORIGINS = "*"
-    SOCKETIO_ASYNC_MODE = "threading"
+    # Socket.IO CORS config
+    SOCKETIO_CORS_ORIGINS = ["*"]
     
-    # Sync config
-    SYNC_INTERVAL = int(os.getenv("SOUI_SYNC_INTERVAL", "5"))  # seconds
+    # Agent states
+    VALID_AGENT_STATES = ["idle", "writing", "researching", "executing", "syncing", "error"]
     
-    # State mapping
-    VALID_AGENT_STATES = frozenset({
-        "idle", "writing", "researching", "executing", "syncing", "error"
-    })
-    
-    STATE_TO_AREA_MAP = {
-        "idle": "breakroom",
-        "writing": "writing",
-        "researching": "writing",
-        "executing": "writing",
-        "syncing": "writing",
-        "error": "error",
-    }
-    
-    @classmethod
-    def ensure_directories(cls):
-        """Ensure required directories exist."""
-        cls.FRONTEND_DIR.mkdir(exist_ok=True)
-        # Don't create database directory - it should exist
-
-# Initialize config
-Config.ensure_directories()
+    # API version
+    API_VERSION = "v1"
