@@ -10,11 +10,16 @@ services:
       - "5000:5000"
     environment:
       - DATABASE_PATH=/data/github-collab.db
-      - DEBUG=false
+      - DEBUG=true
       - HOST=0.0.0.0
       - PORT=5000
     volumes:
+      # 数据持久化
       - star-office-data:/data
+      # 开发环境热重载挂载
+      - /home/wljmmx/star-office-ui/backend:/app/backend
+      - /home/wljmmx/star-office-ui/frontend:/app/frontend
+      - /home/wljmmx/.openclaw/skills/github-collab:/app/skills/github-collab
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/api/health')"]

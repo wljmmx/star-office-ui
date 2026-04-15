@@ -22,6 +22,12 @@ COPY frontend/ ./frontend/
 # 创建数据目录
 RUN mkdir -p /data
 
+# 挂载映射说明（用于 docker-compose 开发环境）：
+# - /home/wljmmx/star-office-ui/backend → /app/backend
+# - /home/wljmmx/star-office-ui/frontend → /app/frontend
+# - /home/wljmmx/.openclaw/skills/github-collab → /app/skills/github-collab
+# 注意：生产环境部署时请移除这些挂载，使用镜像内置代码
+
 # 暴露端口
 EXPOSE 5000
 
