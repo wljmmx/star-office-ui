@@ -56,6 +56,9 @@ class Config:
     SOCKETIO_CORS_ORIGINS = ["*"]
     SOCKETIO_ASYNC_MODE = "threading"
     
+    # Sync config
+    SYNC_INTERVAL = 30
+    
     # Agent states
     VALID_AGENT_STATES = ["idle", "writing", "researching", "executing", "syncing", "error"]
     
