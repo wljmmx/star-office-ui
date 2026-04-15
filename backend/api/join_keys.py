@@ -1,10 +1,5 @@
 """Join keys API routes."""
 
-from flask import jsonify
-from . import join_keys_bp
-from utils.json_utils import load_json_file
-from config import Config
-
 from flask import Blueprint, jsonify
 from utils.json_utils import load_json_file
 from config import Config
@@ -18,12 +13,7 @@ def get_join_keys():
         data = load_json_file(Config.JOIN_KEYS_FILE, {"keys": []})
         return jsonify({
             "ok": True,
-            "keys": data.get("keys", [])
-        })
-    except Exception as e:
-        return jsonify({
-            "ok": False,
-            "msg": str(e)
+            "msg": "获取成功",
             "data": {
                 "keys": data.get("keys", [])
             }
