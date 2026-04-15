@@ -9,7 +9,7 @@ Modern modular architecture with:
 - Real-time synchronization
 """
 
-from flask import Flask, make_response, send_from_directory
+from flask import Flask, make_response, send_from_directory, jsonify
 from flask_socketio import SocketIO
 from pathlib import Path
 import os
@@ -21,10 +21,12 @@ from config import Config
 from api import (
     agents_bp,
     tasks_bp,
+    projects_bp,
     state_bp,
     assets_bp,
     config_bp,
     join_keys_bp,
+    health_bp,
 )
 
 # Import services
@@ -57,10 +59,24 @@ def create_app():
     # Register API blueprints
     app.register_blueprint(agents_bp)
     app.register_blueprint(tasks_bp)
+    app.register_blueprint(projects_bp)
     app.register_blueprint(state_bp)
     app.register_blueprint(assets_bp)
     app.register_blueprint(config_bp)
     app.register_blueprint(join_keys_bp)
+    
+    # Health check endpoint
+    @health_bp.route('/health', methods=['GET'])
+    def health_check():
+        """Health check endpoint."""
+        return jsonify({
+            'service': 'star-office-ui',
+            'status': 'healthy',
+            'timestamp': __import__('datetime').datetime.now().isoformat(),
+            'version': 'v1'
+        })
+    
+    app.register_blueprint(health_bp)
     
     # Initialize sync service
     sync_service = get_sync_service(socketio)

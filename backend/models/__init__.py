@@ -5,6 +5,45 @@ from datetime import datetime
 from typing import Optional, List
 
 @dataclass
+class Project:
+    """Project data model."""
+    project_id: int
+    name: str
+    github_url: str
+    description: Optional[str] = None
+    status: str = "active"
+    work_dir: Optional[str] = None
+    created_at: str = field(default_factory=lambda: datetime.now().isoformat())
+    updated_at: str = field(default_factory=lambda: datetime.now().isoformat())
+    
+    @classmethod
+    def from_db(cls, db_record: dict) -> 'Project':
+        """Create Project from database record."""
+        return cls(
+            project_id=db_record.get('id', 0),
+            name=db_record.get('name', 'Unknown Project'),
+            github_url=db_record.get('github_url', ''),
+            description=db_record.get('description'),
+            status=db_record.get('status', 'active'),
+            work_dir=db_record.get('work_dir'),
+            created_at=db_record.get('created_at', datetime.now().isoformat()),
+            updated_at=db_record.get('updated_at', datetime.now().isoformat()),
+        )
+    
+    def to_dict(self) -> dict:
+        """Convert to dictionary."""
+        return {
+            "projectId": self.project_id,
+            "name": self.name,
+            "githubUrl": self.github_url,
+            "description": self.description,
+            "status": self.status,
+            "workDir": self.work_dir,
+            "createdAt": self.created_at,
+            "updatedAt": self.updated_at,
+        }
+
+@dataclass
 class Agent:
     """Agent data model."""
     agent_id: str
@@ -18,10 +57,15 @@ class Agent:
     task_id: Optional[str] = None
     task_title: Optional[str] = None
     task_progress: int = 0
+    project_id: Optional[int] = None
+    project_name: Optional[str] = None
+    project_url: Optional[str] = None
+    parent_agent_id: Optional[str] = None
+    subagents: List[str] = field(default_factory=list)
     updated_at: str = field(default_factory=lambda: datetime.now().isoformat())
     
     @classmethod
-    def from_db(cls, db_record: dict, task: Optional['Task'] = None) -> 'Agent':
+    def from_db(cls, db_record: dict, task: Optional['Task'] = None, project: Optional['Project'] = None) -> 'Agent':
         """Create Agent from database record."""
         agent = cls(
             agent_id=db_record.get('id', ''),
@@ -40,6 +84,11 @@ class Agent:
             agent.task_title = task.title
             agent.task_progress = task.progress
             agent.detail = task.title
+            # Add project info from task if available
+            if project:
+                agent.project_id = project.project_id
+                agent.project_name = project.name
+                agent.project_url = project.github_url
         
         return agent
     
@@ -70,6 +119,11 @@ class Agent:
             "task_id": self.task_id,
             "task_title": self.task_title,
             "task_progress": self.task_progress,
+            "project_id": self.project_id,
+            "project_name": self.project_name,
+            "project_url": self.project_url,
+            "parent_agent_id": self.parent_agent_id,
+            "subagents": self.subagents,
             "updated_at": self.updated_at,
         }
 
@@ -81,13 +135,16 @@ class Task:
     status: str = "pending"
     progress: int = 0
     assigned_to: Optional[str] = None
+    project_id: Optional[int] = None
+    project_name: Optional[str] = None
+    project_url: Optional[str] = None
     created_at: str = field(default_factory=lambda: datetime.now().isoformat())
     updated_at: str = field(default_factory=lambda: datetime.now().isoformat())
     
     @classmethod
-    def from_db(cls, db_record: dict) -> 'Task':
+    def from_db(cls, db_record: dict, project: Optional['Project'] = None) -> 'Task':
         """Create Task from database record."""
-        return cls(
+        task = cls(
             task_id=db_record.get('id', ''),
             title=db_record.get('title', 'Unknown Task'),
             status=db_record.get('status', 'pending'),
@@ -96,6 +153,14 @@ class Task:
             created_at=db_record.get('created_at', datetime.now().isoformat()),
             updated_at=db_record.get('updated_at', datetime.now().isoformat()),
         )
+        
+        # Add project info if available
+        if project:
+            task.project_id = project.project_id
+            task.project_name = project.name
+            task.project_url = project.github_url
+        
+        return task
     
     def to_dict(self) -> dict:
         """Convert to dictionary."""
@@ -105,6 +170,9 @@ class Task:
             "status": self.status,
             "progress": self.progress,
             "assigned_to": self.assigned_to,
+            "project_id": self.project_id,
+            "project_name": self.project_name,
+            "project_url": self.project_url,
             "created_at": self.created_at,
             "updated_at": self.updated_at,
         }
