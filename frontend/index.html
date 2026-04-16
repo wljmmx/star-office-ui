@@ -302,7 +302,7 @@
                     });
                     
                     this.socket.on('agents_update', (data) => {
-                        this.agents = data.data.agents || [];
+                        this.agents = data.agents || [];
                         this.loading = false;
                         console.log(`🔄 Received ${this.agents.length} agents`);
                     });
@@ -318,7 +318,7 @@
                         .then(res => res.json())
                         .then(data => {
                             if (data.ok && data.data && data.data.agents) {
-                                this.agents = data.data.agents;
+                                this.agents = data.agents;
                             }
                             this.loading = false;
                         })

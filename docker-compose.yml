@@ -13,6 +13,7 @@ services:
       - DEBUG=true
       - HOST=0.0.0.0
       - PORT=5000
+      - FLASK_SECRET_KEY=MySecretKey28220990e538a09200c2ca347b63aa876fa264c0c90d88d5d5bfc1457ef8f537!
     volumes:
       # 数据持久化
       - star-office-data:/data
