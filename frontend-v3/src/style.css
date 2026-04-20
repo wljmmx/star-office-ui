@@ -1,0 +1,74 @@
+:root {
+  --bg-primary: #1a1a2e;
+  --bg-secondary: #16213e;
+  --bg-card: #0f3460;
+  --text-primary: #eee;
+  --text-secondary: #aaa;
+  --accent: #e94560;
+  --success: #4caf50;
+  --warning: #ff9800;
+  --danger: #f44336;
+  --info: #2196f3;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+}
+
+/* State badges */
+.state-idle { background: var(--bg-secondary); color: var(--text-secondary); }
+.state-writing { background: var(--info); color: white; }
+.state-researching { background: var(--warning); color: white; }
+.state-executing { background: var(--success); color: white; }
+.state-syncing { background: var(--accent); color: white; }
+.state-error { background: var(--danger); color: white; }
+
+/* Socket status */
+.socket-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--bg-card);
+  border-radius: 20px;
+  font-size: 0.9em;
+}
+
+.socket-status.status-connected { color: var(--success); }
+.socket-status.status-disconnected { color: var(--danger); }
+.socket-status.status-reconnecting { color: var(--warning); }
+.socket-status.status-error { color: var(--danger); }
+
+/* Animation */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.pulse {
+  animation: pulse 2s infinite;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.slide-in {
+  animation: slideIn 0.3s ease;
+}

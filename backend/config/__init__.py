@@ -58,6 +58,7 @@ def _parse_cors_origins(env_value: str) -> List[str]:
     
     Supports comma-separated list of origins.
     Each origin is validated to ensure it's a valid URL format.
+    NO WILDCARDS ALLOWED for security.
     
     Args:
         env_value: Comma-separated list of origins
@@ -66,12 +67,16 @@ def _parse_cors_origins(env_value: str) -> List[str]:
         List of validated origins
         
     Raises:
-        ConfigError: If any origin is invalid
+        ConfigError: If any origin is invalid or contains wildcard
     """
     if not env_value:
         return []
     
     origins = [origin.strip() for origin in env_value.split(',') if origin.strip()]
+    
+    # Reject wildcards
+    if '*' in origins or '/*' in origins or '/.*' in origins:
+        raise ConfigError("Wildcard (*) origins are not allowed for security reasons")
     
     # Validate each origin format
     url_pattern = re.compile(
@@ -87,7 +92,7 @@ def _parse_cors_origins(env_value: str) -> List[str]:
         if not url_pattern.match(origin):
             raise ConfigError(f"Invalid CORS origin format: {origin}")
     
-    return origins + ["*"]
+    return origins
 
 
 class Config:
@@ -139,25 +144,31 @@ class Config:
     HOST = os.getenv("SOUI_HOST", "0.0.0.0")
     PORT = int(os.getenv("SOUI_PORT", "5000"))
     
-    # CORS config - No more wildcard (*)
+    # CORS config - No wildcards allowed
     _cors_origins_raw = os.getenv("SOUI_CORS_ORIGINS", "")
     try:
         CORS_ORIGINS = _parse_cors_origins(_cors_origins_raw)
     except ConfigError as e:
         raise ConfigError(f"Invalid CORS_ORIGINS: {str(e)}")
     
-    # Allow localhost by default for development
-    if DEBUG and "http://localhost:3000" not in CORS_ORIGINS:
-        CORS_ORIGINS.append("http://localhost:3000")
-    if DEBUG and "http://127.0.0.1:3000" not in CORS_ORIGINS:
-        CORS_ORIGINS.append("http://127.0.0.1:3000")
+    # Allow localhost by default for development only
+    if DEBUG:
+        dev_origins = ["http://localhost:3000", "http://127.0.0.1:3000", 
+                       "http://localhost:5000", "http://127.0.0.1:5000"]
+        for origin in dev_origins:
+            if origin not in CORS_ORIGINS:
+                CORS_ORIGINS.append(origin)
     
-    # SocketIO config - Use validated CORS origins
+    # SocketIO config - Use validated CORS origins (no wildcards)
     SOCKETIO_CORS_ORIGINS = CORS_ORIGINS if CORS_ORIGINS else ["http://localhost:3000"]
     SOCKETIO_ASYNC_MODE = "threading"
     
     # Sync config
     SYNC_INTERVAL = int(os.getenv("SOUI_SYNC_INTERVAL", "5"))  # seconds
+    
+    # Validate sync interval
+    if not 1 <= SYNC_INTERVAL <= 60:
+        raise ConfigError("SOUI_SYNC_INTERVAL must be between 1 and 60 seconds")
     
     # State mapping
     VALID_AGENT_STATES = frozenset({
@@ -193,6 +204,10 @@ class Config:
         # Check CORS origins in production
         if not cls.DEBUG and not cls.CORS_ORIGINS:
             errors.append("CORS_ORIGINS must be set in production")
+        
+        # Check for wildcards in production
+        if not cls.DEBUG and '*' in cls.CORS_ORIGINS:
+            errors.append("Wildcard CORS origins are not allowed in production")
         
         if errors:
             raise ConfigError("Configuration validation failed:\n" + "\n".join(f"  - {e}" for e in errors))

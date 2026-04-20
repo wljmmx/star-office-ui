@@ -1,415 +1,455 @@
 # Star Office UI - 部署指南
 
-本文档提供 Star Office UI 的完整部署说明，包括本地开发、Docker 部署和生产环境配置。
-
 ## 📋 目录
 
 - [快速开始](#快速开始)
-- [环境要求](#环境要求)
-- [本地开发部署](#本地开发部署)
+- [环境配置](#环境配置)
+- [本地开发](#本地开发)
+- [生产部署](#生产部署)
 - [Docker 部署](#docker-部署)
-- [生产环境部署](#生产环境部署)
-- [配置说明](#配置说明)
-- [故障排查](#故障排查)
+- [安全配置](#安全配置)
 
 ---
 
 ## 快速开始
 
+### 1. 克隆项目
+
 ```bash
-# 1. 克隆仓库
-git clone https://github.com/your-username/star-office-ui.git
+git clone https://github.com/wljmmx/star-office-ui.git
 cd star-office-ui
-
-# 2. 配置环境变量
-cp .env.template .env
-# 编辑 .env 文件，设置必要的配置
-
-# 3. 启动服务（Docker）
-docker-compose up -d
-
-# 4. 访问应用
-# http://localhost:5000
 ```
 
----
-
-## 环境要求
-
-### 系统要求
-- **操作系统**: Linux, macOS, Windows (WSL2)
-- **内存**: 最小 512MB，推荐 1GB+
-- **磁盘**: 最小 100MB 可用空间
-- **网络**: 稳定的网络连接
-
-### 依赖项
-
-#### Docker 部署（推荐）
-- Docker Engine 20.10+
-- Docker Compose 2.0+
-
-#### 本地开发
-- Python 3.11+
-- pip 21.0+
-- Node.js 16+ (可选，用于前端开发)
-
----
-
-## 本地开发部署
-
-### 1. 安装 Python 依赖
+### 2. 初始化环境
 
 ```bash
-# 创建虚拟环境
-python -m venv venv
-source venv/bin/activate  # Linux/macOS
-# 或
-venv\Scripts\activate  # Windows
+# 运行环境配置脚本
+./setup-env.sh
+```
 
-# 安装依赖
+### 3. 安装依赖
+
+```bash
+# 安装 Python 依赖
 pip install -r backend/requirements.txt
+
+# 安装前端依赖（Vue 3 版本）
+cd frontend-v3
+npm install
 ```
 
-### 2. 配置环境变量
+### 4. 初始化数据库
 
 ```bash
-# 复制环境变量模板
-cp .env.template .env
-
-# 编辑配置
-nano .env  # 或使用其他编辑器
+python backend/init_db.py
 ```
 
-### 3. 启动服务
+### 5. 启动服务
 
 ```bash
-# 确保数据库存在
-ls skills/github-collab/github-collab.db
+# 启动后端
+python backend/main.py
 
-# 启动 Flask 应用
-cd backend
-python main.py
+# 启动前端（Vue 3）
+cd frontend-v3
+npm run dev
 ```
 
-### 4. 访问应用
+访问：http://localhost:5000
 
-打开浏览器访问：`http://localhost:5000`
+---
+
+## 环境配置
+
+### 环境变量说明
+
+| 变量名 | 说明 | 默认值 | 必填 |
+|--------|------|--------|------|
+| `FLASK_SECRET_KEY` | Flask 密钥（32+ 字符） | - | ✅ |
+| `JWT_SECRET_KEY` | JWT 密钥（32+ 字符） | - | ✅ |
+| `SOUI_DEBUG` | 调试模式 | `false` | ❌ |
+| `SOUI_HOST` | 服务器地址 | `0.0.0.0` | ❌ |
+| `SOUI_PORT` | 服务器端口 | `5000` | ❌ |
+| `SOUI_CORS_ORIGINS` | CORS 允许的域名 | - | ✅(生产) |
+| `SOUI_SYNC_INTERVAL` | WebSocket 同步间隔 | `5` | ❌ |
+| `SOUI_COOKIE_SECURE` | Cookie 安全标志 | `false` | ❌ |
+| `SOUI_LOG_LEVEL` | 日志级别 | `INFO` | ❌ |
+
+### 配置示例
+
+**开发环境 (.env.development)**:
+```bash
+FLASK_SECRET_KEY=dev-secret-key-min-32-chars-with-special!
+JWT_SECRET_KEY=dev-jwt-secret-key-min-32-chars-with-special!
+SOUI_DEBUG=true
+SOUI_HOST=127.0.0.1
+SOUI_PORT=5000
+SOUI_CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+SOUI_COOKIE_SECURE=false
+SOUI_LOG_LEVEL=DEBUG
+```
+
+**生产环境 (.env.production)**:
+```bash
+FLASK_SECRET_KEY=<生成的安全密钥>
+JWT_SECRET_KEY=<生成的安全密钥>
+SOUI_DEBUG=false
+SOUI_HOST=0.0.0.0
+SOUI_PORT=5000
+SOUI_CORS_ORIGINS=https://yourdomain.com
+SOUI_COOKIE_SECURE=true
+SOUI_LOG_LEVEL=INFO
+```
+
+---
+
+## 本地开发
+
+### 启动开发服务器
+
+```bash
+# 1. 配置环境变量
+source .env
+
+# 2. 启动后端（热重载）
+python backend/main.py
+
+# 3. 启动前端（Vue 3）
+cd frontend-v3
+npm run dev
+```
+
+### 开发模式特性
+
+- ✅ 代码热重载
+- ✅ 详细日志输出
+- ✅ 自动 CORS 配置
+- ✅ 开发工具支持
+
+---
+
+## 生产部署
+
+### 1. 安全配置
+
+```bash
+# 生成安全密钥
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+
+# 配置环境变量
+export FLASK_SECRET_KEY=<生成的密钥>
+export JWT_SECRET_KEY=<生成的密钥>
+export SOUI_DEBUG=false
+export SOUI_COOKIE_SECURE=true
+```
+
+### 2. 使用 Gunicorn 部署
+
+```bash
+# 安装 Gunicorn
+pip install gunicorn
+
+# 启动生产服务器
+gunicorn -w 4 -b 0.0.0.0:5000 backend.main:app
+```
+
+### 3. Nginx 反向代理
+
+```nginx
+server {
+    listen 80;
+    server_name yourdomain.com;
+
+    location / {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /socket.io {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+}
+```
+
+### 4. HTTPS 配置
+
+```bash
+# 使用 Let's Encrypt
+sudo certbot --nginx -d yourdomain.com
+```
 
 ---
 
 ## Docker 部署
 
-### 基本部署
+### 1. 构建镜像
 
 ```bash
-# 构建并启动
-docker-compose up -d
+# 构建 Docker 镜像
+docker build -t star-office-ui .
 
-# 查看日志
-docker-compose logs -f
-
-# 停止服务
-docker-compose down
+# 或使用 Docker Compose
+docker-compose build
 ```
 
-### 使用自定义配置
+### 2. 启动容器
 
 ```bash
-# 使用自定义环境变量
-export FLASK_SECRET_KEY="your-secret-key"
-export SOUI_CORS_ORIGINS="http://localhost:3000,https://yourdomain.com"
+# 使用 Docker
+docker run -d \
+  -p 5000:5000 \
+  -e FLASK_SECRET_KEY=<密钥> \
+  -e JWT_SECRET_KEY=<密钥> \
+  -e SOUI_DEBUG=false \
+  --name star-office-ui \
+  star-office-ui
 
+# 使用 Docker Compose
 docker-compose up -d
 ```
 
-### 数据库持久化
-
-Docker Compose 已配置命名卷 `star-office-data`，数据会持久化存储：
+### 3. 数据持久化
 
 ```bash
-# 查看卷位置
-docker volume inspect star-office-star-office-data
+# 创建数据目录
+mkdir -p ./data
 
-# 备份数据
-docker run --rm \
-  -v star-office-star-office-data:/data:ro \
-  -v $(pwd):/backup \
-  alpine tar czf /backup/star-office-backup.tar.gz /data
+# 挂载数据卷
+docker run -d \
+  -p 5000:5000 \
+  -v ./data:/data \
+  --name star-office-ui \
+  star-office-ui
+```
+
+### 4. 生产环境 Docker Compose
+
+```yaml
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_SECRET_KEY=${FLASK_SECRET_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - SOUI_DEBUG=false
+      - SOUI_COOKIE_SECURE=true
+    volumes:
+      - star-office-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  star-office-data:
+    driver: local
 ```
 
 ---
 
-## 生产环境部署
+## 安全配置
 
-### 1. 安全配置
+### 1. 密钥管理
 
 ```bash
-# 生成安全的密钥
-python -c "import secrets; print(secrets.token_hex(32))"
+# ❌ 错误：硬编码密钥
+FLASK_SECRET_KEY='hardcoded-key'
 
-# 在 .env 中设置
-FLASK_SECRET_KEY="生成的密钥"
-SOUI_DEBUG=false
-SOUI_COOKIE_SECURE=true
+# ✅ 正确：从环境变量读取
+FLASK_SECRET_KEY=${FLASK_SECRET_KEY}
 ```
 
 ### 2. CORS 配置
 
 ```bash
-# 仅允许特定域名
+# ❌ 错误：通配符
+SOUI_CORS_ORIGINS=*
+
+# ✅ 正确：明确域名
 SOUI_CORS_ORIGINS=https://yourdomain.com,https://api.yourdomain.com
 ```
 
-### 3. 使用 Nginx 反向代理
+### 3. 安全头配置
 
-#### 启用 Nginx
+在 `backend/main.py` 中添加：
 
-1. 编辑 `docker-compose.yml`，取消 Nginx 服务的注释
-2. 配置 `nginx.conf`：
-
-```nginx
-events {
-    worker_connections 1024;
-}
-
-http {
-    upstream star_office {
-        server star-office-ui:5000;
-    }
-
-    server {
-        listen 80;
-        server_name yourdomain.com;
-
-        location / {
-            proxy_pass http://star_office;
-            proxy_http_version 1.1;
-            proxy_set_header Upgrade $http_upgrade;
-            proxy_set_header Connection "upgrade";
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-        }
-
-        location /static {
-            proxy_pass http://star_office/static;
-            add_header Cache-Control "public, max-age=3600";
-        }
-    }
-}
+```python
+@app.after_request
+def security_headers(response):
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    return response
 ```
 
-#### 配置 SSL（可选）
+### 4. 日志安全
 
-```bash
-# 放置证书
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-  -keyout ssl/selfsigned.key \
-  -out ssl/selfsigned.crt
+```python
+# 过滤敏感信息
+from backend.utils.logger import filter_sensitive_headers
 
-# 更新 nginx.conf 添加 SSL 配置
+safe_headers = filter_sensitive_headers(request.headers)
+logger.info("request_received", headers=safe_headers)
 ```
-
-### 4. 启动生产环境
-
-```bash
-# 构建生产镜像
-docker-compose build
-
-# 启动服务
-docker-compose -f docker-compose.yml up -d
-
-# 验证健康检查
-docker-compose ps
-```
-
----
-
-## 配置说明
-
-### 环境变量
-
-| 变量名 | 说明 | 默认值 | 必需 |
-|--------|------|--------|------|
-| `FLASK_SECRET_KEY` | Flask 会话密钥 | 无 | ✅ |
-| `SOUI_DEBUG` | 调试模式 | `false` | ❌ |
-| `SOUI_HOST` | 监听地址 | `127.0.0.1` | ❌ |
-| `SOUI_PORT` | 监听端口 | `5000` | ❌ |
-| `SOUI_CORS_ORIGINS` | 允许的 CORS 源 | `http://localhost:3000` | ❌ |
-| `SOUI_COOKIE_SECURE` | Cookie Secure 标志 | `false` | ❌ |
-| `SOUI_SYNC_INTERVAL` | 同步间隔（秒） | `5` | ❌ |
-
-### 端口配置
-
-| 端口 | 用途 | 协议 |
-|------|------|------|
-| 5000 | Flask 应用 | HTTP/WebSocket |
-| 80 | Nginx HTTP | HTTP |
-| 443 | Nginx HTTPS | HTTPS |
-
-### 数据目录
-
-| 路径 | 说明 |
-|------|------|
-| `/data` | 数据库和持久化数据 |
-| `/app` | 应用代码（容器内） |
 
 ---
 
 ## 故障排查
 
-### 常见问题
+### 问题 1: 密钥验证失败
 
-#### 1. 容器无法启动
+**错误**: `ConfigError: SECRET_KEY must be at least 32 characters`
 
+**解决**: 生成符合要求的密钥
 ```bash
-# 查看日志
-docker-compose logs star-office-ui
-
-# 检查端口占用
-netstat -tlnp | grep 5000
-
-# 检查卷权限
-ls -la /var/lib/docker/volumes/
+python -c "import secrets; print(secrets.token_urlsafe(32))"
 ```
 
-#### 2. 数据库连接失败
+### 问题 2: CORS 错误
 
+**错误**: `No 'Access-Control-Allow-Origin' header`
+
+**解决**: 配置正确的 CORS 域名
 ```bash
-# 验证数据库文件存在
-ls -la skills/github-collab/github-collab.db
-
-# 检查数据库权限
-docker exec star-office-ui ls -la /data/
+SOUI_CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
 ```
 
-#### 3. WebSocket 连接失败
+### 问题 3: 数据库连接失败
 
+**错误**: `sqlite3.OperationalError: no such table`
+
+**解决**: 初始化数据库
 ```bash
-# 检查 CORS 配置
-grep CORS .env
-
-# 验证 SocketIO 端点
-curl -i http://localhost:5000/socket.io/?EIO=4&transport=websocket
+python backend/init_db.py
 ```
 
-#### 4. 内存不足
+### 问题 4: WebSocket 连接失败
 
-```bash
-# 调整资源限制
-# 编辑 docker-compose.yml，增加内存限制
-deploy:
-  resources:
-    limits:
-      memory: 1G
-```
+**错误**: `WebSocket connection failed`
 
-### 日志查看
-
-```bash
-# 查看所有日志
-docker-compose logs -f
-
-# 查看特定服务
-docker-compose logs -f star-office-ui
-
-# 查看最近 100 行
-docker-compose logs --tail=100 star-office-ui
-```
-
-### 健康检查
-
-```bash
-# 检查容器状态
-docker-compose ps
-
-# 测试健康端点
-curl http://localhost:5000/api/health
-
-# 查看容器健康状态
-docker inspect --format='{{.State.Health.Status}}' star-office-ui
+**解决**: 检查 Nginx 配置
+```nginx
+location /socket.io {
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+}
 ```
 
 ---
 
 ## 性能优化
 
-### 1. 调整同步间隔
+### 1. 数据库优化
 
-```bash
-# 降低同步频率以减少资源消耗
-SOUI_SYNC_INTERVAL=10
+```python
+# 启用 WAL 模式
+PRAGMA journal_mode = WAL;
+PRAGMA synchronous = NORMAL;
+PRAGMA cache_size = -64000;
 ```
 
-### 2. 启用 Gunicorn（生产推荐）
+### 2. 缓存配置
 
-```bash
-# 安装 Gunicorn
-pip install gunicorn
+```python
+# 使用 Redis 缓存
+from flask_caching import Cache
 
-# 启动命令
-gunicorn -w 4 -b 0.0.0.0:5000 main:app
+cache = Cache(app, config={
+    'CACHE_TYPE': 'redis',
+    'CACHE_REDIS_URL': 'redis://localhost:6379/0'
+})
 ```
 
-### 3. 数据库优化
+### 3. 静态文件优化
 
-```bash
-# 在数据库连接中启用 WAL 模式
-PRAGMA journal_mode=WAL;
+```python
+# 使用 CDN 或 Nginx 服务静态文件
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 31536000  # 1 年
 ```
 
 ---
 
-## 更新和维护
+## 监控与日志
 
-### 更新应用
+### 1. 应用监控
+
+```bash
+# 查看日志
+docker logs -f star-office-ui
+
+# 查看实时日志
+tail -f /var/log/star-office/app.log
+```
+
+### 2. 健康检查
+
+```bash
+# 检查 API 健康状态
+curl http://localhost:5000/api/health
+
+# 检查 WebSocket 状态
+curl -N http://localhost:5000/socket.io/
+```
+
+### 3. 性能监控
+
+```python
+# 使用 Prometheus 监控
+from prometheus_flask_exporter import PrometheusMetrics
+
+metrics = PrometheusMetrics(app)
+metrics.info('app_info', 'Star Office UI', version='1.0.0')
+```
+
+---
+
+## 更新与维护
+
+### 1. 更新代码
 
 ```bash
 # 拉取最新代码
-git pull
+git pull origin main
 
-# 重新构建
+# 重新构建镜像
 docker-compose build
 
 # 重启服务
 docker-compose up -d
 ```
 
-### 备份数据
+### 2. 备份数据
 
 ```bash
 # 备份数据库
-docker run --rm \
-  -v star-office-star-office-data:/data:ro \
-  -v $(pwd)/backups:/backup \
-  alpine cp /data/github-collab.db /backup/
-```
+cp /data/github-collab.db /backup/github-collab.db.$(date +%Y%m%d)
 
-### 恢复数据
-
-```bash
-# 停止服务
-docker-compose stop
-
-# 恢复数据库
-docker run --rm \
-  -v star-office-star-office-data:/data:rw \
-  -v $(pwd)/backups:/backup \
-  alpine cp /backup/github-collab.db /data/
-
-# 启动服务
-docker-compose start
+# 备份配置文件
+tar -czf backup-$(date +%Y%m%d).tar.gz .env data/
 ```
 
 ---
 
 ## 支持
 
-- **文档**: https://github.com/your-username/star-office-ui/wiki
-- **问题反馈**: https://github.com/your-username/star-office-ui/issues
-- **安全报告**: 参见 SECURITY.md
+- 📧 技术支持：support@example.com
+- 📚 文档：https://docs.staroffice.ui
+- 🐛 问题反馈：https://github.com/wljmmx/star-office-ui/issues
 
 ---
 
-*最后更新：2024 年 4 月*
+**最后更新**: 2026-04-20
